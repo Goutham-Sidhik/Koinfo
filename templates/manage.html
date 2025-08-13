@@ -1,0 +1,89 @@
+
+{% extends 'base.html' %}
+{% block content %}
+<section class="grid grid--manage">
+  <div class="card card--txnform">
+    <h2 class="card__title">Add / Edit Transaction</h2>
+    <form id="txnForm" class="form form--2col">
+      <input type="hidden" name="id" id="txnId">
+      <input type="date" name="date" id="txnDate" required>
+      <input type="number" min="1" name="amount" id="txnAmount" placeholder="Amount" required>
+      <select name="category_id" id="txnCategory" required></select>
+      <input type="text" name="note" id="txnNote" placeholder="Note (optional)">
+      <div class="row">
+        <button id="txnSubmit" class="btn btn--primary" type="submit">Add</button>
+        <button id="txnCancelEdit" type="button" class="btn btn--ghost" style="display:none">Cancel</button>
+      </div>
+    </form>
+  </div>
+   <div class="card card--remaining">
+    <!-- Header row for remaining amount and budget start day selector. Using flex to align items side by side. -->
+    <div class="remaining-header" style="display: flex; justify-content: space-between; align-items: center;">
+      <h2 class="card__title" style="margin:0">Remaining Amount</h2>
+      <!-- Inline label and input for selecting the start day of the budget cycle -->
+      <span style="display: flex; align-items: center; font-size: 0.8rem; color: var(--accent3);">
+        Cycle Begins on:
+        <input type="number" class="alert" id="cycleStartDay" min="1" max="31" style="width: 35px; margin-left: 8px; padding: 6px 8px; border-color: var(--accent3);" />
+      </span>
+    </div>
+    <div class="remaining-amt" id="remainingAmt">₹0</div>
+    <div class="pace-info" id="remainingPace"></div>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <div class="remaining-note" id="remainingNote"></div>
+      <div id="cycleDateRange" class="alert" style="font-size: 0.8rem; margin-top: 4px; color: #ffffff; background: var(--edit);"></div>
+    </div>
+    
+  </div>
+
+  <div class="card card--goals">
+    <h2 class="card__title">Goals</h2>
+    <form id="goalForm" class="form form--2col">
+      <input type="hidden" name="id" id="goalId">
+      <input name="name" id="goalName" placeholder="Goal name" required>
+      <input type="number" min="1" name="target" id="goalTarget" placeholder="Target" required>
+      <input type="number" min="1" name="current" id="goalCurrent" placeholder="Current">
+      <input type="date" name="deadline" id="goalDeadline" required>
+      <div class="row">
+        <button id="goalSubmit" class="btn btn--primary" type="submit">Add Goal</button>
+        <button id="goalCancelEdit" type="button" class="btn btn--ghost" style="display:none">Cancel</button>
+      </div>
+    </form>
+    <div class="stack scroll" id="goalList"></div>
+  </div>
+  <div class="card card--categories">
+    <h2 class="card__title">Create Category</h2>
+    <form id="catForm" class="form form--3col">
+      <input name="name" placeholder="Category name" required>
+      <select name="type">
+        <option value="expense">Expense</option>
+        <option value="saving">Saving</option>
+        <option value="income">Income</option>
+      </select>
+      <button class="btn btn--primary" type="submit">Create</button>
+    </form>
+    <div class="stack scroll" id="catList"></div>
+  </div>
+  <div class="card card--debts">
+    <h2 class="card__title">Debts</h2>
+    <form id="debtForm" class="form form--2col">
+      <input type="hidden" name="id" id="debtId">
+      <input name="name" id="debtName" placeholder="Name" required>
+      <input type="number" min="1" name="balance" id="debtBalance" placeholder="Balance" required>
+      <select name="kind" id="debtKind">
+        <option value="payable">Payable (Debt)</option>
+        <option value="receivable">Receivable (Claims)</option>
+      </select>
+      <div class="row">
+        <button id="debtSubmit" class="btn btn--primary" type="submit">Add Debt</button>
+        <button id="debtCancelEdit" type="button" class="btn btn--ghost" style="display:none">Cancel</button>
+      </div>
+    </form>
+    <div class="stack scroll" id="debtList"></div>
+  </div>
+  <div class="card card--transactions">
+    <h2 class="card__title">Transactions</h2>
+    <div id="txnList" class="stack scroll fill"></div>
+  </div>
+</section>
+<script src="{{ url_for('static', filename='js/manage.js') }}"></script>
+{% endblock %}

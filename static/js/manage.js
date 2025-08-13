@@ -1,0 +1,620 @@
+/* static/js/manage.js
+ * Manage page logic: CRUD for categories, debts, goals, transactions,
+ * goal overreach guards, debt overpay guard, duplicate protections,
+ * visible date icon/placeholder handled in CSS, and a Remaining (This Month) card.
+ */
+
+// ---------- Helpers ----------
+async function getData(){ 
+  const r = await fetch('/api/data', { cache: 'no-store' }); 
+  if(!r.ok) throw new Error('Failed to fetch data'); 
+  return await r.json(); 
+}
+
+function option(o){ return `<option value="${o.id}">${o.name} (${o.type})</option>`; }
+
+function pill(text){ 
+  return `<span style="padding:4px 8px;border-radius:999px;border:1px solid rgba(255,255,255,.15);background:#0f1530;font-size:12px">${text}</span>`; 
+}
+
+function pillBorder(text, borderColor){ 
+  return `<span style="padding:4px 8px;border-radius:999px;border: 1px solid ${borderColor};background:#0f1530;font-size:12px">${text}</span>`; 
+}
+
+function row(text, right){ 
+  return `<div class="row" style="justify-content:space-between;background:#0f1530;border:1px solid rgba(255,255,255,.15);padding:10px;border-radius:12px"><div>${text}</div><div class="row" style="gap:8px">${right||''}</div></div>`; 
+}
+
+function btn(id, label, color){ 
+  return `<button id="${id}" class="btn" style="background:${color};color:white">${label}</button>`; 
+}
+
+function formatINR(v){
+  try { return new Intl.NumberFormat(undefined,{style:'currency',currency:'INR'}).format(v||0); }
+  catch { return '₹' + Number(v||0).toFixed(2); }
+}
+
+function monthKey(iso){
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+}
+
+function daysBetween(a, b) {
+  const d1 = new Date(a); d1.setHours(0,0,0,0);
+  const d2 = new Date(b); d2.setHours(0,0,0,0);
+  return Math.floor((d2 - d1) / (1000*60*60*24));
+}
+
+// Returns { label: "12d left" | "Due today" | "Overdue 3d", color: cssColor }
+function goalUrgency(created, deadline) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const end = new Date(deadline); end.setHours(0,0,0,0);
+  if (isNaN(end)) return { label: '', color: '#cdd0e0' };
+
+  // If no created date, treat today as start
+  const start = created ? new Date(created) : new Date(today);
+  start.setHours(0,0,0,0);
+
+  const left = daysBetween(today, end);
+  if (left < 0) return { label: `Overdue ${Math.abs(left)}d`, color: 'var(--bad)' };  // Overdue
+  if (left === 0) return { label: 'Due today', color: 'var(--warn)' };               // Today
+  if (left <= 15) return { label: `Due in ${left}d`, color: 'var(--warn)' };         // urgent
+  return { label: `${left}d left`,   color: 'var(--ok)' };                        // comfortable
+}
+
+// Color for CURRENT amount based on progress %
+// <50% = muted, 50–80% = violet, 80–100% = amber, ≥100% = green
+function goalProgressColor(current, target) {
+  const t = Math.max(0, Number(target) || 0);
+  const c = Math.max(0, Number(current) || 0);
+  if (t <= 0) return '#cdd0e0';
+  const p = c / t;
+  if (p >= 1)   return 'var(--ok)';     // reached target
+  if (p > 0.0) return 'var(--sav)';   // mid progress (violet)
+  if (p === 0.0) return 'var(--bad)';
+  return 'var(--fg)';                     
+}
+
+// ----- Remaining (This Month) helpers -----
+/**
+ * Compute remaining budget for the current period.
+ * The period begins on the day of month defined by window._cycleStartDay.
+ * The previous period’s leftover is carried forward into the current remaining.
+ *
+ * @param {Object} data The full data model from the backend
+ * @param {Array} cats The categories list
+ * @returns {Object} {inc: number, spentSaved: number, remaining: number}
+ */
+function computeRemainingThisMonth(data, cats){
+  const startDay = Math.max(1, Math.min(31, parseInt(window._cycleStartDay || 1)));
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  // Determine the start of the current budget period
+  let curStart;
+  if (today.getDate() >= startDay) {
+    curStart = new Date(today.getFullYear(), today.getMonth(), startDay);
+  } else {
+    // Start day is in previous month
+    const prevMonth = new Date(today.getFullYear(), today.getMonth() - 1, startDay);
+    curStart = prevMonth;
+  }
+  // Next period start (one month after curStart)
+  const nextStart = new Date(curStart.getFullYear(), curStart.getMonth() + 1, curStart.getDate());
+  // Previous period start (one month before curStart)
+  const prevStart = new Date(curStart.getFullYear(), curStart.getMonth() - 1, curStart.getDate());
+
+  const txns = data.transactions || [];
+  const typeOf = (id)=> (cats.find(c=>c.id===id)||{}).type;
+  // Helper to determine if a date is within [start, end)
+  const inPeriod = (d, start, end) => d >= start && d < end;
+
+  const curTxns = txns.filter(t => {
+    const d = new Date(t.date);
+    return inPeriod(d, curStart, nextStart);
+  });
+  const prevTxns = txns.filter(t => {
+    const d = new Date(t.date);
+    return inPeriod(d, prevStart, curStart);
+  });
+  // Sums for a list
+  const sumIncome  = list => list.filter(t=> typeOf(t.category_id)==='income').reduce((a,t)=>a+Math.abs(+t.amount||0),0);
+  const sumOutflow = list => list.filter(t=> typeOf(t.category_id)!=='income').reduce((a,t)=>a+Math.abs(+t.amount||0),0);
+  const incPrev = sumIncome(prevTxns);
+  const outPrev = sumOutflow(prevTxns);
+  const prevRemaining = incPrev - outPrev;
+  const incCur = sumIncome(curTxns);
+  const outCur = sumOutflow(curTxns);
+  const remaining = prevRemaining + (incCur - outCur);
+  return { inc: incCur, spentSaved: outCur, remaining };
+}
+
+function renderRemainingCard(data, cats){
+  const amtEl  = document.getElementById('remainingAmt');
+  const noteEl = document.getElementById('remainingNote');
+  const paceEl = document.getElementById('remainingPace'); // add this element in HTML
+  if(!amtEl || !noteEl) return;
+
+  // Current month figures
+  const {inc, spentSaved, remaining} = computeRemainingThisMonth(data, cats);
+  amtEl.textContent = formatINR(remaining);
+  amtEl.style.color = remaining >= 0 ? 'var(--ok)' : 'var(--bad)';
+
+  // Two-line note with bullets
+  if (remaining > 0) {
+    noteEl.innerHTML = `
+      • <span style="color:var(--ok)">Income (${formatINR(inc)})</span><br>
+      • Expenses + Savings (${formatINR(spentSaved)})
+    `;
+  } else if (remaining == 0) {
+    noteEl.innerHTML = `
+      • <span style="color:var(--muted)">Income (${formatINR(inc)})</span><br>
+      • <span style="color:var(--muted)">Expenses + Savings (${formatINR(spentSaved)})</span>
+    `;
+  } else {
+    noteEl.innerHTML = `
+      • Income (${formatINR(inc)})<br>
+      • <span style="color:var(--bad)">Expenses + Savings (${formatINR(spentSaved)})</span>
+    `;
+  }
+
+  // ----- MTD pace vs last month -----
+  if (paceEl) {
+    const today = new Date();
+    const curDay = today.getDate();
+    const curY = today.getFullYear(), curM = today.getMonth();
+    const lastM = (curM + 11) % 12, lastY = curM === 0 ? curY - 1 : curY;
+
+    const typeOf = (id)=> (cats.find(c=>c.id===id)||{}).type;
+    const txns = data.transactions || [];
+
+    const mtdSum = (y,m,day)=>{
+      return txns.filter(t=>{
+        const d = new Date(t.date);
+        return d.getFullYear()===y && d.getMonth()===m && d.getDate()<=day && typeOf(t.category_id)!=='income';
+      }).reduce((a,t)=> a + Math.abs(+t.amount||0), 0);
+    };
+
+    const curMTD  = mtdSum(curY,  curM,  curDay);
+    const lastMTD = mtdSum(lastY, lastM, curDay);
+    const diff    = curMTD - lastMTD;
+
+    const arrow = diff > 0 ? '▲' : diff < 0 ? '▼' : '＝';
+    const text  = diff === 0
+      ? 'same as last month MTD'
+      : `${formatINR(Math.abs(diff))} vs last month MTD`;
+
+    // Optional coloring: up (more outflow) = red, down = green
+    paceEl.textContent = `${arrow} ${text}`;
+    paceEl.style.color = diff > 0 ? 'var(--bad)' : diff < 0 ? 'var(--ok)' : 'var(--muted)';
+  }
+}
+
+
+// ---------- Main renderer ----------
+async function refresh(){
+  const data = await getData();
+  const cats = data.categories || [];
+
+  // Expose link maps for UI logic (goal/ debt categories)
+  window._goalCatIds = new Set((data.goals||[]).map(g=>g.linked_category_id).filter(Boolean));
+  window._debtCatIds = new Set((data.debts||[]).map(d=>d.linked_category_id).filter(Boolean));
+
+  // Populate category select (transactions form)
+  const txnCat = document.getElementById('txnCategory');
+  if (txnCat) txnCat.innerHTML = cats.map(option).join('');
+
+  document.getElementById('txnCategory').dispatchEvent(new Event('change'));
+
+  // ----- Categories list (block delete for linked ones) -----
+  const catList = document.getElementById('catList');
+  const linked = new Set([...(window._goalCatIds||[]), ...(window._debtCatIds||[])]);
+  if (catList) {
+    catList.innerHTML = cats.map(c=>{
+      const isLinked = linked.has(c.id);
+      const delId = 'delc_' + c.id;
+      const right = isLinked ? pill('linked') : btn(delId,'Delete','var(--del)');
+      setTimeout(()=>{ 
+        if(!isLinked){ 
+          const el = document.getElementById(delId);
+          if(el) el.addEventListener('click', async()=>{
+            // Custom confirmation modal
+            if(await showConfirm(`Delete "${c.name}" Category ?`)){
+              const r = await fetch(`/api/category/${c.id}`, {method:'DELETE'});
+              if(!r.ok){ 
+                try{
+                  const j = await r.json();
+                  showAlert(j.error || 'Delete failed', 'error');
+                }catch{
+                  showAlert('Delete failed', 'error');
+                }
+              }
+              refresh(); 
+            }
+          }); 
+        } 
+      },0);
+      const borderColor = c.type === 'income' ? 'var(--inc)' : c.type === 'expense' ? 'var(--exp)' : 
+                          c.type === 'saving' ? 'var(--sav)' : 'rgba(255,255,255,.15)'; 
+      return row(`${c.name} ${pillBorder(c.type, borderColor)}`, right);
+    }).join('');
+  }
+
+  // ----- Debts list -----
+  const debtList = document.getElementById('debtList');
+  if (debtList) {
+    debtList.innerHTML = (data.debts||[]).map(d=>{
+      const editId = 'editd_' + d.id;
+      const delId = 'deld_' + d.id;
+      const kindLabel = d.kind === 'receivable' ? 'Receivable (Claims)' : 'Payable (Debt)';
+      setTimeout(()=>{
+        const eBtn = document.getElementById(editId);
+        if(eBtn) eBtn.addEventListener('click', ()=>{
+          document.getElementById('debtId').value = d.id;
+          document.getElementById('debtName').value = d.name;
+          document.getElementById('debtBalance').value = d.balance;
+          document.getElementById('debtKind').value = d.kind || 'payable';
+          document.getElementById('debtSubmit').textContent = 'Save Debt';
+          document.getElementById('debtCancelEdit').style.display = '';
+        });
+        const xBtn = document.getElementById(delId);
+        if(xBtn) xBtn.addEventListener('click', async()=>{
+          if(await showConfirm(`Delete "${d.name}" Debt ?`)){
+            await fetch(`/api/debt/${d.id}`, {method:'DELETE'});
+            refresh();
+          }
+        });
+      },0);
+      const borderColor = d.kind === 'receivable' ? 'var(--inc)' : 'var(--exp)';
+      return row(
+        `${d.name} — ${formatINR(d.balance)} ${pillBorder(kindLabel, borderColor)}`,
+        btn(editId,'Edit','var(--edit)') + btn(delId,'Delete','var(--del)')
+      );
+    }).join('');
+  }
+
+  // ----- Goals list -----
+  const goalList = document.getElementById('goalList');
+  if (goalList) {
+    goalList.innerHTML = (data.goals||[]).map(g=>{
+      const editId = 'editg_' + g.id;
+      const delId = 'delg_' + g.id;
+      setTimeout(()=>{
+        const eBtn = document.getElementById(editId);
+        if(eBtn) eBtn.addEventListener('click', ()=>{
+          document.getElementById('goalId').value = g.id;
+          document.getElementById('goalName').value = g.name;
+          document.getElementById('goalTarget').value = g.target;
+          document.getElementById('goalCurrent').value = g.current;
+          document.getElementById('goalDeadline').value = g.deadline;
+          document.getElementById('goalSubmit').textContent = 'Save Goal';
+          document.getElementById('goalCancelEdit').style.display = '';
+        });
+        const xBtn = document.getElementById(delId);
+        if(xBtn) xBtn.addEventListener('click', async()=>{
+          if(await showConfirm(`Delete "${g.name}" Goal ?`)){
+            await fetch(`/api/goal/${g.id}`, {method:'DELETE'});
+            refresh();
+          }
+        });
+      },0);
+      
+      const urg = goalUrgency(g.created, g.deadline);
+      const curColor = goalProgressColor(g.current, g.target);
+
+      const left = `
+        <div>
+          <strong>${g.name}</strong> —
+          <span style="color:${curColor}"> ${formatINR(g.current)}</span> / ${formatINR(g.target)}<br>
+          <span style="color:#cdd0e0;font-size:12px">${g.deadline}</span>
+          <span style="color:${urg.color};font-size:12px">• ${urg.label}</span>
+        </div>
+      `;
+      return row(left, btn(editId,'Edit','var(--edit)') + btn(delId,'Delete','var(--del)'));
+    }).join('');
+  }
+
+  // ----- Remaining card (top-left, separate section) -----
+  renderRemainingCard(data, cats);
+
+  // ----- Transactions list (latest 50) -----
+  const txns = [...(data.transactions||[])].sort((a,b)=> new Date(b.date)-new Date(a.date)).slice(0,50);
+  const txnList = document.getElementById('txnList');
+  if (txnList) {
+    txnList.innerHTML = txns.map(t=>{
+      const cat = cats.find(c=>c.id===t.category_id);
+      const editId = 'editt_' + t.id;
+      const delId = 'delt_' + t.id;
+      setTimeout(()=>{
+        const eBtn = document.getElementById(editId);
+        if(eBtn) eBtn.addEventListener('click', ()=>{
+          document.getElementById('txnId').value = t.id;
+          document.getElementById('txnDate').value = t.date;
+          document.getElementById('txnAmount').value = Math.abs(t.amount);
+          document.getElementById('txnCategory').value = t.category_id;
+          document.getElementById('txnNote').value = t.note || '';
+          document.getElementById('txnSubmit').textContent = 'Save';
+          document.getElementById('txnCancelEdit').style.display = '';
+          document.getElementById('txnCategory').dispatchEvent(new Event('change'));
+          // Store original transaction details for validation during update
+          window._editingTxn = { id: t.id, amount: Number(t.amount), category_id: t.category_id };
+        });
+        const xBtn = document.getElementById(delId);
+        if(xBtn) xBtn.addEventListener('click', async()=>{
+          if(await showConfirm(`Delete "${cat.name}" Transaction ?`)){
+            await fetch(`/api/transaction/${t.id}`, {method:'DELETE'});
+            refresh();
+          }
+        });
+      },0);
+
+      const txnColor = cat && {income:'var(--inc)', expense:'var(--exp)', saving:'var(--sav)'}[cat.type] || '#cdd0e0';
+      const amountText = `<span style="color:${txnColor}">${formatINR(Math.abs(+t.amount || 0))}</span>`;
+      
+      const left = `
+        <strong>${cat ? cat.name : 'Unknown'}</strong>
+        <div style="color:#cdd0e0;font-size:12px;margin-top:2px">${t.date} • ${amountText}</div>
+        ${t.note ? `<div style="color:#cdd0e0;font-size:12px;margin-top:2px;word-break:break-word">${t.note}</div>` : ''}
+      `;
+      const right = btn(editId,'Edit','var(--edit)') + btn(delId,'Delete','var(--del)');
+      return row(left, right);
+    }).join('');
+  }
+}
+
+// ---------- Forms ----------
+
+// Create Category
+document.getElementById('catForm')?.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const body = Object.fromEntries(fd.entries());
+  try {
+    const res = await fetch('/api/category', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    if(!res.ok){ 
+      let errText = String(res.status); 
+      try{ const j = await res.json(); if(j?.error) errText = j.error; }catch{}; 
+      // Use custom pop‑up instead of blocking alert
+      showAlert('Create category failed: ' + errText, 'error'); 
+      return; 
+    }
+    e.target.reset();
+    refresh();
+  } catch(err){ 
+    showAlert('Network error while creating category', 'error');
+  }
+});
+
+// Transactions: Add / Save (includes goal/debt logic)
+document.getElementById('txnForm')?.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const id = (document.getElementById('txnId').value || '').trim();
+  const fd = new FormData(e.target);
+  const payload = Object.fromEntries(fd.entries());
+  let amt = Math.abs(parseFloat(payload.amount||0));
+  const selCat = payload.category_id;
+
+  // Determine if editing an existing transaction and capture its original amount and category
+  const editing = id && window._editingTxn && window._editingTxn.id === id;
+  const oldAmt  = editing ? Math.abs(Number(window._editingTxn.amount) || 0) : 0;
+  const oldCat  = editing ? window._editingTxn.category_id : null;
+
+  // Load current data and categories for remaining budget and goal/debt checks
+  const data = await getData();
+  const cats = data.categories || [];
+
+  // ----- Check against remaining budget for this period -----
+  // Determine the category type
+  const catObj = cats.find(c => c.id === selCat) || {};
+  const catType = catObj.type || 'expense';
+  // Compute the current remaining amount (includes carry‑forward)
+  const { remaining: budgetRemaining } = computeRemainingThisMonth(data, cats);
+  let deltaOut = 0;
+  if (catType !== 'income') {
+    if (editing && oldCat === selCat) {
+      // Additional spend beyond original amount
+      deltaOut = amt - oldAmt;
+      if (deltaOut < 0) deltaOut = 0;
+    } else {
+      // New transaction or changed category to non‑income
+      deltaOut = amt;
+    }
+  }
+  if(deltaOut > budgetRemaining){
+    showAlert('Txn Exceeds Available Amount', 'error');
+    return;
+  }
+
+  // ----- Goal logic: soft‑cap warning when deposit exceeds the goal target -----
+  if(window._goalCatIds && window._goalCatIds.has(selCat)){
+    const goal = (data.goals||[]).find(g=>g.linked_category_id===selCat);
+    if(goal){
+      const cur = parseFloat(goal.current || 0);
+      const tgt = parseFloat(goal.target || 0);
+      let projected;
+      if(editing && oldCat === selCat){
+        const delta = amt - oldAmt;
+        projected = cur + delta;
+      } else {
+        projected = cur + amt;
+      }
+      if(tgt > 0 && projected > tgt){
+        const over = projected - tgt;
+        showAlert(`Heads up: Exceeding goal by ${formatINR(over)}.`, 'warn');
+      }
+      if(tgt > 0 && projected == tgt){
+        showAlert(`Hurray: Goal Reached.`, 'info');
+      }
+    }
+  }
+
+  // ----- Debt logic: prevent paying more than the remaining balance -----
+  if(window._debtCatIds && window._debtCatIds.has(selCat)){
+    const debt = (data.debts||[]).find(d=>d.linked_category_id===selCat);
+    if(debt){
+      const balance = parseFloat(debt.balance || 0);
+      let exceeds;
+      if(editing && oldCat === selCat){
+        const delta = amt - oldAmt;
+        exceeds = delta > balance;
+      } else {
+        exceeds = amt > balance;
+      }
+      if(exceeds){
+        showAlert('Payment Exceeds Balance', 'error');
+        return;
+      }
+    }
+  }
+
+  const body = {date: payload.date, amount: amt, category_id: selCat, note: payload.note};
+
+  if(id){
+    await fetch(`/api/transaction/${id}`, {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+  } else {
+    await fetch('/api/transaction', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+  }
+
+  e.target.reset();
+  document.getElementById('txnId').value = '';
+  document.getElementById('txnSubmit').textContent = 'Add';
+  document.getElementById('txnCancelEdit').style.display = 'none';
+  refresh();
+});
+
+document.getElementById('txnCancelEdit')?.addEventListener('click', ()=>{
+  document.getElementById('txnForm').reset();
+  document.getElementById('txnId').value = '';
+  document.getElementById('txnSubmit').textContent = 'Add';
+  document.getElementById('txnCancelEdit').style.display = 'none';
+});
+
+// Debts
+document.getElementById('debtForm')?.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const id = (document.getElementById('debtId').value || '').trim();
+  const fd = new FormData(e.target);
+  const p = Object.fromEntries(fd.entries());
+  const body = { name: p.name, balance: parseFloat(p.balance||0), kind: p.kind || 'payable' };
+  let res;
+  if(id){
+    res = await fetch(`/api/debt/${id}`, {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+  } else {
+    res = await fetch('/api/debt', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+  }
+  if(!res.ok){ 
+    let msg = res.status; 
+    try{ const j = await res.json(); if(j?.error) msg = j.error; }catch{} 
+    showAlert('Save debt failed: '+msg, 'error'); 
+    return; 
+  }
+  e.target.reset();
+  document.getElementById('debtId').value = '';
+  document.getElementById('debtSubmit').textContent = 'Add Debt';
+  document.getElementById('debtCancelEdit').style.display = 'none';
+  refresh();
+});
+
+document.getElementById('debtCancelEdit')?.addEventListener('click', ()=>{
+  document.getElementById('debtForm').reset();
+  document.getElementById('debtId').value = '';
+  document.getElementById('debtSubmit').textContent = 'Add Debt';
+  document.getElementById('debtCancelEdit').style.display = 'none';
+});
+
+// Goals
+document.getElementById('goalForm')?.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const id = (document.getElementById('goalId').value || '').trim();
+  const fd = new FormData(e.target);
+  const p = Object.fromEntries(fd.entries());
+  // require future date
+  const today = new Date(); today.setHours(0,0,0,0);
+  const dl = p.deadline ? new Date(p.deadline) : null;
+  if(!dl || dl <= today){ 
+    showAlert('Please choose a deadline after today', 'error'); 
+    return; 
+  }
+  const body = { name: p.name, target: parseFloat(p.target||0), current: parseFloat(p.current||0), deadline: p.deadline };
+  let res;
+  if(id){
+    res = await fetch(`/api/goal/${id}`, {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+  } else {
+    res = await fetch('/api/goal', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+  }
+  if(!res.ok){ 
+    let msg = res.status; 
+    try{ const j = await res.json(); if(j?.error) msg = j.error; }catch{} 
+    showAlert('Save goal failed: '+msg, 'error'); 
+    return; 
+  }
+  e.target.reset();
+  document.getElementById('goalId').value = '';
+  document.getElementById('goalSubmit').textContent = 'Add Goal';
+  document.getElementById('goalCancelEdit').style.display = 'none';
+  refresh();
+});
+
+// set min attribute for goal deadline to today
+(function(){
+  const el = document.getElementById('goalDeadline');
+  if(el){ el.min = new Date().toISOString().split('T')[0]; }
+})();
+
+document.getElementById('goalCancelEdit')?.addEventListener('click', ()=>{
+  document.getElementById('goalForm').reset();
+  document.getElementById('goalId').value = '';
+  document.getElementById('goalSubmit').textContent = 'Add Goal';
+  document.getElementById('goalCancelEdit').style.display = 'none';
+});
+
+// Initial render
+refresh();
+
+// ---------- Budget start day setup ----------
+
+function updateCycleRange() {
+  const el = document.getElementById('cycleStartDay');
+  const out = document.getElementById('cycleDateRange');
+  if (!el || !out) return;
+
+  const startDay = parseInt(el.value, 10);
+  if (!startDay || startDay < 1 || startDay > 31) { out.textContent = ''; return; }
+
+  const today = new Date();
+  const startDate = new Date(today.getFullYear(), today.getMonth(), startDay);
+  const endDate = new Date(startDate);
+  endDate.setMonth(endDate.getMonth() + 1);
+  endDate.setDate(endDate.getDate() - 1);
+
+  const format = d => d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short'});
+  out.textContent = `Current Cycle: ${format(startDate)} to ${format(endDate)}`;
+}
+
+document.getElementById('cycleStartDay')?.addEventListener('input', updateCycleRange);
+document.addEventListener('DOMContentLoaded', updateCycleRange); // <-- run on load
+
+
+// Apply saved budget start day or default to 1.  When the user changes
+// the value, persist it to localStorage and re‑render the dashboard.
+(function(){
+  const input = document.getElementById('cycleStartDay');
+  if(!input) return;
+  // Load saved start day
+  const saved = localStorage.getItem('cycleStartDay');
+  let day = 1;
+  if(saved){
+    const n = parseInt(saved);
+    if(!isNaN(n) && 1 <= n <= 31) day = n;
+  }
+  window._cycleStartDay = day;
+  input.value = day;
+  input.addEventListener('change', () => {
+    let val = parseInt(input.value);
+    if(isNaN(val) || val < 1) val = 1;
+    if(val > 31) val = 31;
+    window._cycleStartDay = val;
+    localStorage.setItem('cycleStartDay', val.toString());
+    refresh();
+  });
+})();

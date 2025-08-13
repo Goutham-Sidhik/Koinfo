@@ -1,0 +1,341 @@
+{
+  "categories": [
+    {
+      "id": "1152e9f7-e134-4d2e-a4cf-3f37b85934dd",
+      "name": "Rent",
+      "type": "expense"
+    },
+    {
+      "id": "c9608a23-dc10-4bc3-ab68-6abb4359539c",
+      "name": "Groceries",
+      "type": "expense"
+    },
+    {
+      "id": "38d02076-8e1a-4f16-827d-198c81ba2a61",
+      "name": "Transport",
+      "type": "expense"
+    },
+    {
+      "id": "bf39ba76-0f3c-4558-8860-1c1c6c8eacdb",
+      "name": "Investments",
+      "type": "saving"
+    },
+    {
+      "id": "cdb03a07-b3b1-4eb8-bd40-c52b85aa8453",
+      "name": "Emergency Fund",
+      "type": "saving"
+    },
+    {
+      "id": "5866bc9e-5b11-4b17-ace0-6a0f051fe0f6",
+      "name": "Salary",
+      "type": "income"
+    },
+    {
+      "id": "1850baa2-64ef-4af7-aa85-da8995461300",
+      "name": "card",
+      "type": "expense"
+    },
+    {
+      "id": "5770e6d7-f1f5-45ab-8ef8-11e12a4cdb6b",
+      "name": "Vacation",
+      "type": "expense"
+    },
+    {
+      "id": "ec4e262e-7293-4389-a739-8c9d326819dd",
+      "name": "intst - Debt",
+      "type": "income"
+    },
+    {
+      "id": "c2407501-7eda-4f65-a129-c35f7ff8415d",
+      "name": "Emergency Fund - Goal",
+      "type": "saving"
+    },
+    {
+      "id": "ef76c33a-3590-4114-ac29-7ff638fedc39",
+      "name": "sonakshi - Goal",
+      "type": "saving"
+    },
+    {
+      "id": "80a272e0-2452-4935-9bf8-f547ab98c2be",
+      "name": "jkljkljkl - Goal",
+      "type": "saving"
+    },
+    {
+      "id": "02cdfabf-2b9a-414b-b686-d5503ce473fd",
+      "name": "chk - Debt",
+      "type": "expense"
+    },
+    {
+      "id": "4e1ad6e2-915c-4b16-bdc3-b7ec483ef490",
+      "name": "qweras - Goal",
+      "type": "saving"
+    }
+  ],
+  "transactions": [
+    {
+      "id": "bbff24cc-940c-4e2d-ae0f-e53ccb1d1e94",
+      "date": "2025-08-01",
+      "category_id": "5866bc9e-5b11-4b17-ace0-6a0f051fe0f6",
+      "amount": 8090000.0,
+      "note": "",
+      "type": "income"
+    },
+    {
+      "id": "293d99aa-b621-40cb-be5e-fa774940646a",
+      "date": "2025-07-31",
+      "category_id": "38d02076-8e1a-4f16-827d-198c81ba2a61",
+      "amount": 6786.0,
+      "note": "",
+      "type": "expense"
+    },
+    {
+      "id": "9e4e7067-c164-483e-a027-1d7c89d8de62",
+      "date": "2025-08-11",
+      "category_id": "139aa696-c344-44d7-b1a4-43dd8d17e824",
+      "amount": 12355.0,
+      "note": "",
+      "type": "income"
+    },
+    {
+      "id": "160172ea-b9ea-49f9-928b-3f3355a6bb4a",
+      "date": "2025-08-07",
+      "category_id": "1152e9f7-e134-4d2e-a4cf-3f37b85934dd",
+      "amount": 13412.0,
+      "note": "asdasdad",
+      "type": "expense"
+    },
+    {
+      "id": "96c89593-d9a5-416c-b38b-0520384c2c1f",
+      "date": "2025-08-26",
+      "category_id": "cdb03a07-b3b1-4eb8-bd40-c52b85aa8453",
+      "amount": 34534.0,
+      "note": "ahbdkjhasbdlh alkhjsbdasbdlkbaskldblkhasbdjkasdkjasd",
+      "type": "saving"
+    },
+    {
+      "id": "67b3ea14-4eb2-4062-8af2-9d0d39659592",
+      "date": "2025-08-11",
+      "category_id": "ec4e262e-7293-4389-a739-8c9d326819dd",
+      "amount": 296.0,
+      "note": "",
+      "type": "income"
+    },
+    {
+      "id": "cf5da758-7e1b-43b3-92ac-5c33789f2865",
+      "date": "2025-08-29",
+      "category_id": "1152e9f7-e134-4d2e-a4cf-3f37b85934dd",
+      "amount": 12.0,
+      "note": "",
+      "type": "expense"
+    },
+    {
+      "id": "7ac60714-153f-4bf5-bc42-b66e7561b4a6",
+      "date": "2025-08-11",
+      "category_id": "2cd0ac59-e104-46c6-9c07-f1ac0e43cc51",
+      "amount": 15.0,
+      "note": "",
+      "type": "saving"
+    },
+    {
+      "id": "12cc49c7-3dcb-4986-bd1b-4beb8756bee8",
+      "date": "2025-09-02",
+      "category_id": "5866bc9e-5b11-4b17-ace0-6a0f051fe0f6",
+      "amount": 12312132.0,
+      "note": "",
+      "type": "income"
+    },
+    {
+      "id": "a42652c0-74d7-4415-bb6e-065b70ae49f2",
+      "date": "2025-07-09",
+      "category_id": "5866bc9e-5b11-4b17-ace0-6a0f051fe0f6",
+      "amount": 789784654.0,
+      "note": "",
+      "type": "income"
+    },
+    {
+      "id": "6ab688fb-a6aa-4030-90ea-3b0a6f08e8ab",
+      "date": "2025-08-13",
+      "category_id": "1152e9f7-e134-4d2e-a4cf-3f37b85934dd",
+      "amount": -1000.0,
+      "note": "",
+      "type": "expense"
+    },
+    {
+      "id": "a69e8662-d3d7-4ae0-82a7-fc64c4d01f1a",
+      "date": "2025-08-11",
+      "category_id": "5866bc9e-5b11-4b17-ace0-6a0f051fe0f6",
+      "amount": -2000.0,
+      "note": "",
+      "type": "income"
+    },
+    {
+      "id": "8c1ea060-d825-4f3b-9bfd-e40826fc4178",
+      "date": "2025-08-14",
+      "category_id": "80a272e0-2452-4935-9bf8-f547ab98c2be",
+      "amount": 731231.0,
+      "note": "",
+      "type": "saving"
+    },
+    {
+      "id": "21e1c681-8589-47b6-81dc-955fbfd998ea",
+      "date": "2025-08-13",
+      "category_id": "c2407501-7eda-4f65-a129-c35f7ff8415d",
+      "amount": 15000.0,
+      "note": "",
+      "type": "saving"
+    },
+    {
+      "id": "ace42d2b-0c59-4838-ad40-0db315ecf7bc",
+      "date": "2025-08-12",
+      "category_id": "02cdfabf-2b9a-414b-b686-d5503ce473fd",
+      "amount": 30.0,
+      "note": "",
+      "type": "expense"
+    },
+    {
+      "id": "466ca0ee-b719-4a0d-bed0-fab4a55d4c81",
+      "date": "2025-08-15",
+      "category_id": "80a272e0-2452-4935-9bf8-f547ab98c2be",
+      "amount": -1567.0,
+      "note": "",
+      "type": "saving"
+    },
+    {
+      "id": "15cbd583-9e55-47fa-a5f2-e459b3eb11df",
+      "date": "2025-08-14",
+      "category_id": "02cdfabf-2b9a-414b-b686-d5503ce473fd",
+      "amount": 15.0,
+      "note": "",
+      "type": "expense"
+    },
+    {
+      "id": "0f466456-0ed4-4d51-9c8b-f4b00f309607",
+      "date": "2025-08-12",
+      "category_id": "4e1ad6e2-915c-4b16-bdc3-b7ec483ef490",
+      "amount": 15.0,
+      "note": "",
+      "type": "saving"
+    },
+    {
+      "id": "6d7ca54b-7650-435b-b5f8-ecd149451bed",
+      "date": "2025-08-15",
+      "category_id": "139aa696-c344-44d7-b1a4-43dd8d17e824",
+      "amount": 0.0,
+      "note": "",
+      "type": "income"
+    },
+    {
+      "id": "1f82b612-8678-492d-974c-65ba5b6f9c0f",
+      "date": "2025-08-07",
+      "category_id": "1152e9f7-e134-4d2e-a4cf-3f37b85934dd",
+      "amount": 796263893.0,
+      "note": "",
+      "type": "expense"
+    },
+    {
+      "id": "ec1caf1e-4c7c-43f8-b52e-78c6e0a85498",
+      "date": "2025-07-08",
+      "category_id": "5866bc9e-5b11-4b17-ace0-6a0f051fe0f6",
+      "amount": 923456789.0,
+      "note": "",
+      "type": "income"
+    },
+    {
+      "id": "fd730571-ec23-4a89-970b-ae94febb2c01",
+      "date": "2025-07-29",
+      "category_id": "1152e9f7-e134-4d2e-a4cf-3f37b85934dd",
+      "amount": 23456789.0,
+      "note": "",
+      "type": "expense"
+    },
+    {
+      "id": "6e56f931-0eae-4b09-a2c9-0449e5a0336a",
+      "date": "2025-08-14",
+      "category_id": "4e1ad6e2-915c-4b16-bdc3-b7ec483ef490",
+      "amount": 30.0,
+      "note": "",
+      "type": "saving"
+    },
+    {
+      "id": "ac028ea7-2c8e-4abf-85b0-2302ebd58858",
+      "date": "2025-08-14",
+      "category_id": "4e1ad6e2-915c-4b16-bdc3-b7ec483ef490",
+      "amount": 12.0,
+      "note": "",
+      "type": "saving"
+    }
+  ],
+  "debts": [
+    {
+      "id": "6f31e240-25a6-42e0-82be-48ceafc7df5a",
+      "name": "Credit Card",
+      "balance": 30000,
+      "apr": 36.0,
+      "min_payment": 1500
+    },
+    {
+      "id": "245f9fb0-4eb6-4880-a1cf-187c63fea770",
+      "name": "Education Loan",
+      "balance": 250000,
+      "apr": 12.0,
+      "min_payment": 5000
+    },
+    {
+      "id": "b7026c0a-3b7a-40c8-854b-8f31ed23b916",
+      "name": "intst",
+      "balance": 33292.0,
+      "kind": "receivable",
+      "linked_category_id": "ec4e262e-7293-4389-a739-8c9d326819dd"
+    },
+    {
+      "id": "0ef03421-a447-4b01-a43f-2009ef5b3477",
+      "name": "Vacation",
+      "balance": 1231234.0,
+      "kind": "payable",
+      "linked_category_id": "5770e6d7-f1f5-45ab-8ef8-11e12a4cdb6b"
+    },
+    {
+      "id": "dd63ec7e-571c-4792-ab11-71145e09a14a",
+      "name": "chk",
+      "balance": 120.0,
+      "kind": "payable",
+      "linked_category_id": "02cdfabf-2b9a-414b-b686-d5503ce473fd"
+    }
+  ],
+  "goals": [
+    {
+      "id": "0f3e615f-57f1-4b0b-9ae3-1a265fd764af",
+      "name": "sonakshi",
+      "target": 54674576.0,
+      "current": 0.0,
+      "deadline": "2025-08-31",
+      "linked_category_id": "ef76c33a-3590-4114-ac29-7ff638fedc39"
+    },
+    {
+      "id": "e917ab73-cdd3-4c16-ab5c-d5bb8636820e",
+      "name": "Emergency Fund",
+      "target": 200000.0,
+      "current": 45000.0,
+      "deadline": "2025-08-22",
+      "linked_category_id": "c2407501-7eda-4f65-a129-c35f7ff8415d"
+    },
+    {
+      "id": "6cabc559-01d9-496c-b0c0-6b4d3bd3854c",
+      "name": "jkljkljkl",
+      "target": 1231231.0,
+      "current": 729742.0,
+      "deadline": "2025-12-17",
+      "created": "2025-08-12",
+      "linked_category_id": "80a272e0-2452-4935-9bf8-f547ab98c2be"
+    },
+    {
+      "id": "c71d28c4-4dfe-4762-a81d-f0dd439bf5dd",
+      "name": "qweras",
+      "target": 50.0,
+      "current": 57.0,
+      "deadline": "2025-08-13",
+      "created": "2025-08-12",
+      "linked_category_id": "4e1ad6e2-915c-4b16-bdc3-b7ec483ef490"
+    }
+  ]
+}

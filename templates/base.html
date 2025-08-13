@@ -1,0 +1,51 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='icon.png') }}">
+  <title>Budget Buddy</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=2025-08-10-2">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <div class="brand">
+        <img src="{{ url_for('static', filename='icon.png') }}" alt="Logo" style="height: 48px; vertical-align: middle; margin-right: 8px;">
+        {{ page_heading or "Finance Dashboard" }}
+      </div>
+      <nav class="nav">
+        <a
+          class="nav__link {% if title == 'Manage' %}nav__link--primary nav__link--glow{% endif %}"
+          href="{{ url_for('page_dashboard') }}"
+        >Dashboard</a>
+        <a
+          class="nav__link {% if title == 'Dashboard' %}nav__link--primary nav__link--glow{% endif %}"
+          href="{{ url_for('page_manage') }}"
+        >Manage</a>
+        {% if title == 'Manage' %}
+          <a 
+            class="nav__link nav__link--primary nav__link--glow" 
+            href="{{ url_for('download_json') }}" 
+            title="Export your finances (JSON)"
+          >
+            My Data
+          </a>
+        {% endif %}
+      </nav>
+    </header>
+    <main class="{{ main_class or 'main' }}">
+      {% block content %}{% endblock %}
+    </main>
+    <!-- Alert container for pop‑up notifications.  Populated by alerts.js. -->
+    <div id="alert-container"></div>
+
+    <!-- Global alerts helper.  Defines window.showAlert() used throughout the app.
+         Loaded after content so that it can find the alert container. -->
+    <script src="{{ url_for('static', filename='js/alerts.js') }}"></script>
+  </div>
+</body>
+</html>

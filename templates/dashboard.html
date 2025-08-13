@@ -1,0 +1,15 @@
+
+{% extends 'base.html' %}
+{% block content %}
+<section class="grid grid--kpi" id="kpis"></section>
+<section class="grid grid--charts">
+  <div class="card"><h2 class="card__title">Expenses vs Savings (Last 6 Months)</h2><canvas id="lineChart"></canvas></div>
+  <div class="card"><h2 class="card__title">Expense Breakdown</h2><canvas id="donutChart"></canvas></div>
+  <div class="card"><h2 class="card__title">Debt Balances</h2><canvas id="barChart"></canvas></div>
+</section>
+<section class="grid grid--half">
+  <div class="card"><h2 class="card__title">Active Goals</h2><div id="goalsList" class="stack scroll"></div></div>
+  <div class="card"><h2 class="card__title">Recent Transactions</h2><div id="recentTxns" class="stack scroll"></div></div>
+</section>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}
