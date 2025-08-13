@@ -55,7 +55,7 @@ It lets you manage expenses, monitor savings, and plan for future goals with a c
 ---
 
 ## 📷 Screenshots
-*(Add screenshots of your dashboard here — drag & drop images into this README.md in GitHub to upload)*
+*(Add screenshots of dashboard here)*
 
 ---
 
