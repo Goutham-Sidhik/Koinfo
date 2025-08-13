@@ -11,8 +11,8 @@ It lets you manage expenses, monitor savings, and plan for future goals with a c
 ---
 
 ## 🚀 Features
-- Track monthly expenses and income.
-- Monitor savings growth.
+- Track monthly expenses, incomes and savings.
+- Monitor transactions.
 - Set and track financial goals.
 - Cycle-based tracking (e.g., salary cycle).
 - Real-time calculations and updates.
