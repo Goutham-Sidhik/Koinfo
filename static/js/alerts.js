@@ -59,7 +59,7 @@
       dialog.className = 'confirm-dialog';
       const msgEl = document.createElement('div');
       msgEl.style.marginBottom = '16px';
-      msgEl.textContent = message;
+      msgEl.innerHTML = message;
       const buttons = document.createElement('div');
       buttons.style.display = 'flex';
       buttons.style.justifyContent = 'center';
