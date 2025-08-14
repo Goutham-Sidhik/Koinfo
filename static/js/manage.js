@@ -25,9 +25,16 @@ function row(text, right){
   return `<div class="row" style="justify-content:space-between;background:#0f1530;border:1px solid rgba(255,255,255,.15);padding:10px;border-radius:12px"><div>${text}</div><div class="row" style="gap:8px">${right||''}</div></div>`; 
 }
 
+// Button helper that accepts an id, label (can be text or HTML markup), and a background color.
 function btn(id, label, color){ 
   return `<button id="${id}" class="btn" style="background:${color};color:white">${label}</button>`; 
 }
+
+// Icons for edit and delete actions.  These use simple emoji as they
+// work across browsers without external icon fonts.  Each span has
+// aria‑labels for accessibility and a title tooltip for clarity.
+const ICON_EDIT = `<span aria-label="Edit" title="Edit" style="font-size:14px">✏️</span>`;
+const ICON_DELETE = `<span aria-label="Delete" title="Delete" style="font-size:14px">🗑️</span>`;
 
 function formatINR(v){
   try { return new Intl.NumberFormat(undefined,{style:'currency',currency:'INR'}).format(v||0); }
@@ -104,7 +111,7 @@ function goalProgressColor(current, target) {
  *
  * @param {Object} data The full data model from the backend
  * @param {Array} cats The categories list
- * @returns {Object} {inc: number, spentSaved: number, remaining: number}
+ * @returns {Object} {inc: number, exp: number, sav: number, remaining: number}
  */
 function computeRemainingThisMonth(data, cats){
   const startDay = Math.max(1, Math.min(31, parseInt(window._cycleStartDay || 1)));
@@ -140,13 +147,17 @@ function computeRemainingThisMonth(data, cats){
   // Sums for a list
   const sumIncome  = list => list.filter(t=> typeOf(t.category_id)==='income').reduce((a,t)=>a+Math.abs(+t.amount||0),0);
   const sumOutflow = list => list.filter(t=> typeOf(t.category_id)!=='income').reduce((a,t)=>a+Math.abs(+t.amount||0),0);
+  const sumExpflow = list => list.filter(t=> typeOf(t.category_id)==='expense').reduce((a,t)=>a+Math.abs(+t.amount||0),0);
+  const sumSavflow = list => list.filter(t=> typeOf(t.category_id)==='saving').reduce((a,t)=>a+Math.abs(+t.amount||0),0);
   const incPrev = sumIncome(prevTxns);
   const outPrev = sumOutflow(prevTxns);
   const prevRemaining = incPrev - outPrev;
   const incCur = sumIncome(curTxns);
   const outCur = sumOutflow(curTxns);
+  const expCur = sumExpflow(curTxns);
+  const savCur = sumSavflow(curTxns);
   const remaining = prevRemaining + (incCur - outCur);
-  return { inc: incCur, spentSaved: outCur, remaining };
+  return { inc: incCur, exp: expCur, sav:savCur, remaining };
 }
 
 function renderRemainingCard(data, cats){
@@ -156,7 +167,7 @@ function renderRemainingCard(data, cats){
   if(!amtEl || !noteEl) return;
 
   // Current month figures
-  const {inc, spentSaved, remaining} = computeRemainingThisMonth(data, cats);
+  const {inc, exp, sav, remaining} = computeRemainingThisMonth(data, cats);
   amtEl.textContent = formatINR(remaining);
   amtEl.style.color = remaining >= 0 ? 'var(--ok)' : 'var(--bad)';
 
@@ -164,17 +175,17 @@ function renderRemainingCard(data, cats){
   if (remaining > 0) {
     noteEl.innerHTML = `
       • <span style="color:var(--ok)">Income (${formatINR(inc)})</span><br>
-      • Expenses + Savings (${formatINR(spentSaved)})
+      • Expenses (${formatINR(exp)}) • Savings (${formatINR(sav)})
     `;
   } else if (remaining == 0) {
     noteEl.innerHTML = `
       • <span style="color:var(--muted)">Income (${formatINR(inc)})</span><br>
-      • <span style="color:var(--muted)">Expenses + Savings (${formatINR(spentSaved)})</span>
+      • <span style="color:var(--muted)">Expenses (${formatINR(exp)}) • Savings (${formatINR(sav)})</span>
     `;
   } else {
     noteEl.innerHTML = `
       • Income (${formatINR(inc)})<br>
-      • <span style="color:var(--bad)">Expenses + Savings (${formatINR(spentSaved)})</span>
+      • <span style="color:var(--bad)">Expenses (${formatINR(exp)}) • Savings (${formatINR(sav)})</span>
     `;
   }
 
@@ -237,7 +248,7 @@ async function refresh(){
     catList.innerHTML = catsForList.map(c=>{
       const isLinked = linked.has(c.id);
       const delId = 'delc_' + c.id;
-      const right = isLinked ? pill('linked') : btn(delId,'Delete','var(--del)');
+      const right = isLinked ? pill('linked') : btn(delId, ICON_DELETE, 'var(--del)');
       setTimeout(()=>{ 
         if(!isLinked){ 
           const el = document.getElementById(delId);
@@ -301,7 +312,8 @@ async function refresh(){
       const borderColor = d.kind === 'receivable' ? 'var(--inc)' : 'var(--exp)';
       return row(
         `${d.name} — ${formatINR(d.balance)} ${pillBorder(kindLabel, borderColor)}`,
-        btn(editId,'Edit','var(--edit)') + btn(delId,'Delete','var(--del)')
+        // Use icons instead of text for edit/delete
+        btn(editId, ICON_EDIT, 'var(--edit)') + btn(delId, ICON_DELETE, 'var(--del)')
       );
     }).join('');
   }
@@ -347,15 +359,39 @@ async function refresh(){
           <span style="color:${urg.color};font-size:12px">${urg.done ? '• ' : '• '}${urg.label}</span>
         </div>
       `;
-      return row(left, btn(editId,'Edit','var(--edit)') + btn(delId,'Delete','var(--del)'));
+      return row(left, btn(editId, ICON_EDIT, 'var(--edit)') + btn(delId, ICON_DELETE, 'var(--del)'));
     }).join('');
   }
 
   // ----- Remaining card (top-left, separate section) -----
   renderRemainingCard(data, cats);
 
-  // ----- Transactions list (latest 50) -----
-  const txns = [...(data.transactions||[])].sort((a,b)=> new Date(b.date)-new Date(a.date)).slice(0,50);
+  // ----- Transactions list (current cycle) -----
+  // Compute the start and end of the current budget cycle based on
+  // the selected cycle start day (window._cycleStartDay).  If today's date
+  // is before the start day, the cycle began last month; otherwise, it
+  // started this month.  The cycle ends just before the same day in the
+  // next month.
+  const cycleDay = Math.max(1, Math.min(31, parseInt(window._cycleStartDay || 1)));
+  const today = new Date(); today.setHours(0,0,0,0);
+  let cycleStart;
+  if (today.getDate() >= cycleDay) {
+    cycleStart = new Date(today.getFullYear(), today.getMonth(), cycleDay);
+  } else {
+    // If the current day falls before the cycle start day, start from
+    // the previous month (handles wrap‑around for January)
+    cycleStart = new Date(today.getFullYear(), today.getMonth() - 1, cycleDay);
+  }
+  // The end of the cycle is the same anchor day in the next month
+  const cycleEnd = new Date(cycleStart.getFullYear(), cycleStart.getMonth() + 1, cycleStart.getDate());
+  // Filter transactions within [cycleStart, cycleEnd)
+  const txns = [...(data.transactions || [])]
+    .filter(t => {
+      const d = new Date(t.date);
+      return d >= cycleStart && d < cycleEnd;
+    })
+    .sort((a,b) => new Date(b.date) - new Date(a.date));
+
   const txnList = document.getElementById('txnList');
   if (txnList) {
     txnList.innerHTML = txns.map(t=>{
@@ -402,7 +438,8 @@ async function refresh(){
       `;
       // If category missing or deleted, disable edit/delete and show indicator
       const right = (cat && !isDeleted)
-        ? btn(editId,'Edit','var(--edit)') + btn(delId,'Delete','var(--del)')
+        // Replace textual buttons with icons
+        ? btn(editId, ICON_EDIT, 'var(--edit)') + btn(delId, ICON_DELETE, 'var(--del)')
         : pill('Category Deleted');
       return row(left, right);
     }).join('');
