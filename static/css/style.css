@@ -178,7 +178,7 @@ body {
 
 .card__title {
     margin: 0 0 10px 0;
-    font-size: 18px;
+    font-size: 20px;
     font-weight: 700
 }
 
@@ -503,6 +503,7 @@ input[type="date"] {
 }
 
 .btn--primary {
+    font-size: 0.9rem;
     background: linear-gradient(90deg, var(--accent2), var(--accent3));
     color: white
 }
