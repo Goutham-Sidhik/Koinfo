@@ -22,7 +22,7 @@ def _load_data():
                     {"id": str(uuid.uuid4()), "name":"Rent","type":"expense", "deleted": False},
                     {"id": str(uuid.uuid4()), "name":"Groceries","type":"expense", "deleted": False},
                     {"id": str(uuid.uuid4()), "name":"Transport","type":"expense", "deleted": False},
-                    {"id": str(uuid.uuid4()), "name":"Emergency Fund","type":"saving", "deleted": False},
+                    {"id": str(uuid.uuid4()), "name":"Savings","type":"saving", "deleted": False},
                     {"id": str(uuid.uuid4()), "name":"Salary","type":"income", "deleted": False}
                 ],
                 "transactions":[],

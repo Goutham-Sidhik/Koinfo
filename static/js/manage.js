@@ -104,7 +104,7 @@ function goalProgressColor(current, target) {
  *
  * @param {Object} data The full data model from the backend
  * @param {Array} cats The categories list
- * @returns {Object} {inc: number, spentSaved: number, remaining: number}
+ * @returns {Object} {inc: number, exp: number, sav: number, remaining: number}
  */
 function computeRemainingThisMonth(data, cats){
   const startDay = Math.max(1, Math.min(31, parseInt(window._cycleStartDay || 1)));
@@ -140,13 +140,17 @@ function computeRemainingThisMonth(data, cats){
   // Sums for a list
   const sumIncome  = list => list.filter(t=> typeOf(t.category_id)==='income').reduce((a,t)=>a+Math.abs(+t.amount||0),0);
   const sumOutflow = list => list.filter(t=> typeOf(t.category_id)!=='income').reduce((a,t)=>a+Math.abs(+t.amount||0),0);
+  const sumExpflow = list => list.filter(t=> typeOf(t.category_id)==='expense').reduce((a,t)=>a+Math.abs(+t.amount||0),0);
+  const sumSavflow = list => list.filter(t=> typeOf(t.category_id)==='saving').reduce((a,t)=>a+Math.abs(+t.amount||0),0);
   const incPrev = sumIncome(prevTxns);
   const outPrev = sumOutflow(prevTxns);
   const prevRemaining = incPrev - outPrev;
   const incCur = sumIncome(curTxns);
   const outCur = sumOutflow(curTxns);
+  const expCur = sumExpflow(curTxns);
+  const savCur = sumSavflow(curTxns);
   const remaining = prevRemaining + (incCur - outCur);
-  return { inc: incCur, spentSaved: outCur, remaining };
+  return { inc: incCur, exp: expCur, sav:savCur, remaining };
 }
 
 function renderRemainingCard(data, cats){
@@ -156,7 +160,7 @@ function renderRemainingCard(data, cats){
   if(!amtEl || !noteEl) return;
 
   // Current month figures
-  const {inc, spentSaved, remaining} = computeRemainingThisMonth(data, cats);
+  const {inc, exp, sav, remaining} = computeRemainingThisMonth(data, cats);
   amtEl.textContent = formatINR(remaining);
   amtEl.style.color = remaining >= 0 ? 'var(--ok)' : 'var(--bad)';
 
@@ -164,17 +168,17 @@ function renderRemainingCard(data, cats){
   if (remaining > 0) {
     noteEl.innerHTML = `
       • <span style="color:var(--ok)">Income (${formatINR(inc)})</span><br>
-      • Expenses + Savings (${formatINR(spentSaved)})
+      • Expenses (${formatINR(exp)}) • Savings (${formatINR(sav)})
     `;
   } else if (remaining == 0) {
     noteEl.innerHTML = `
       • <span style="color:var(--muted)">Income (${formatINR(inc)})</span><br>
-      • <span style="color:var(--muted)">Expenses + Savings (${formatINR(spentSaved)})</span>
+      • <span style="color:var(--muted)">Expenses (${formatINR(exp)}) • Savings (${formatINR(sav)})</span>
     `;
   } else {
     noteEl.innerHTML = `
       • Income (${formatINR(inc)})<br>
-      • <span style="color:var(--bad)">Expenses + Savings (${formatINR(spentSaved)})</span>
+      • <span style="color:var(--bad)">Expenses (${formatINR(exp)}) • Savings (${formatINR(sav)})</span>
     `;
   }
 
@@ -355,7 +359,19 @@ async function refresh(){
   renderRemainingCard(data, cats);
 
   // ----- Transactions list (latest 50) -----
-  const txns = [...(data.transactions||[])].sort((a,b)=> new Date(b.date)-new Date(a.date)).slice(0,50);
+  // const txns = [...(data.transactions||[])].sort((a,b)=> new Date(b.date)-new Date(a.date)).slice(0,50);
+  // Define your range (inclusive). Accepts Date objects or 'YYYY-MM-DD' strings.
+  const start = new Date(rangeStart);            // e.g. '2025-07-25'
+  const end   = new Date(rangeEnd);              // e.g. '2025-08-24'
+  end.setHours(23, 59, 59, 999);                 // include the full end day
+
+  const txns = [...(data.transactions || [])]
+    .filter(t => {
+      const d = new Date(t.date);
+      return d >= start && d <= end;             // within range
+    })
+    .sort((a,b) => new Date(b.date) - new Date(a.date)); // newest first
+
   const txnList = document.getElementById('txnList');
   if (txnList) {
     txnList.innerHTML = txns.map(t=>{
