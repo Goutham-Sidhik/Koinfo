@@ -359,19 +359,7 @@ async function refresh(){
   renderRemainingCard(data, cats);
 
   // ----- Transactions list (latest 50) -----
-  // const txns = [...(data.transactions||[])].sort((a,b)=> new Date(b.date)-new Date(a.date)).slice(0,50);
-  // Define your range (inclusive). Accepts Date objects or 'YYYY-MM-DD' strings.
-  const start = new Date(rangeStart);            // e.g. '2025-07-25'
-  const end   = new Date(rangeEnd);              // e.g. '2025-08-24'
-  end.setHours(23, 59, 59, 999);                 // include the full end day
-
-  const txns = [...(data.transactions || [])]
-    .filter(t => {
-      const d = new Date(t.date);
-      return d >= start && d <= end;             // within range
-    })
-    .sort((a,b) => new Date(b.date) - new Date(a.date)); // newest first
-
+  const txns = [...(data.transactions||[])].sort((a,b)=> new Date(b.date)-new Date(a.date)).slice(0,50);
   const txnList = document.getElementById('txnList');
   if (txnList) {
     txnList.innerHTML = txns.map(t=>{
