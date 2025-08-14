@@ -195,14 +195,16 @@ function renderRemainingCard(data, cats){
 async function refresh(){
   const data = await getData();
   const cats = data.categories || [];
+  // Derive a list of active (non-deleted) categories for form selections.
+  const activeCats = cats.filter(c => !c.deleted);
 
   // Expose link maps for UI logic (goal/ debt categories)
   window._goalCatIds = new Set((data.goals||[]).map(g=>g.linked_category_id).filter(Boolean));
   window._debtCatIds = new Set((data.debts||[]).map(d=>d.linked_category_id).filter(Boolean));
 
-  // Populate category select (transactions form)
+  // Populate category select (transactions form) using only active categories
   const txnCat = document.getElementById('txnCategory');
-  if (txnCat) txnCat.innerHTML = cats.map(option).join('');
+  if (txnCat) txnCat.innerHTML = activeCats.map(option).join('');
 
   document.getElementById('txnCategory').dispatchEvent(new Event('change'));
 
@@ -210,7 +212,9 @@ async function refresh(){
   const catList = document.getElementById('catList');
   const linked = new Set([...(window._goalCatIds||[]), ...(window._debtCatIds||[])]);
   if (catList) {
-    catList.innerHTML = cats.map(c=>{
+    // Only display active categories in the category management list
+    const catsForList = cats.filter(c => !c.deleted);
+    catList.innerHTML = catsForList.map(c=>{
       const isLinked = linked.has(c.id);
       const delId = 'delc_' + c.id;
       const right = isLinked ? pill('linked') : btn(delId,'Delete','var(--del)');
@@ -218,8 +222,13 @@ async function refresh(){
         if(!isLinked){ 
           const el = document.getElementById(delId);
           if(el) el.addEventListener('click', async()=>{
-            // Custom confirmation modal
-            if(await showConfirm(`Delete "${c.name}" Category ?`)){
+            // Count how many transactions reference this category. These transactions
+            // will become locked once the category is deleted.
+            const txnCount = (data.transactions || []).filter(tx => tx.category_id === c.id).length;
+            const plural = txnCount === 1 ? '' : 's';
+            const note = txnCount > 0 ? `\n\nNote: ${txnCount} transaction${plural} will be locked.` : '';
+            // Custom confirmation modal with transaction count message
+            if(await showConfirm(`Delete "${c.name}" ? <br> <span style="font-size: 0.85em; color: var(--muted);">${note}</span>`)){
               const r = await fetch(`/api/category/${c.id}`, {method:'DELETE'});
               if(!r.ok){ 
                 try{
@@ -259,7 +268,11 @@ async function refresh(){
         });
         const xBtn = document.getElementById(delId);
         if(xBtn) xBtn.addEventListener('click', async()=>{
-          if(await showConfirm(`Delete "${d.name}" Debt ?`)){
+          // Count transactions referencing this debt's linked category
+          const txnCount = (data.transactions || []).filter(tx => tx.category_id === d.linked_category_id).length;
+          const plural = txnCount === 1 ? '' : 's';
+          const note = txnCount > 0 ? `\n\nNote: ${txnCount} transaction${plural} will be locked.` : '';
+          if(await showConfirm(`Delete "${d.name}" ? <br> <span style="font-size: 0.85em; color: var(--muted);">${note}</span>`)){
             await fetch(`/api/debt/${d.id}`, {method:'DELETE'});
             refresh();
           }
@@ -292,7 +305,11 @@ async function refresh(){
         });
         const xBtn = document.getElementById(delId);
         if(xBtn) xBtn.addEventListener('click', async()=>{
-          if(await showConfirm(`Delete "${g.name}" Goal ?`)){
+          // Count transactions referencing this goal's linked category
+          const txnCount = (data.transactions || []).filter(tx => tx.category_id === g.linked_category_id).length;
+          const plural = txnCount === 1 ? '' : 's';
+          const note = txnCount > 0 ? `\n\nNote: ${txnCount} transaction${plural} will be locked.` : '';
+          if(await showConfirm(`Delete "${g.name}" ? <br> <span style="font-size: 0.85em; color: var(--muted);">${note}</span>`)){
             await fetch(`/api/goal/${g.id}`, {method:'DELETE'});
             refresh();
           }
@@ -323,40 +340,49 @@ async function refresh(){
   if (txnList) {
     txnList.innerHTML = txns.map(t=>{
       const cat = cats.find(c=>c.id===t.category_id);
+      const isDeleted = cat && cat.deleted;
       const editId = 'editt_' + t.id;
       const delId = 'delt_' + t.id;
+      // Attach handlers only if category exists and is not deleted
       setTimeout(()=>{
-        const eBtn = document.getElementById(editId);
-        if(eBtn) eBtn.addEventListener('click', ()=>{
-          document.getElementById('txnId').value = t.id;
-          document.getElementById('txnDate').value = t.date;
-          document.getElementById('txnAmount').value = Math.abs(t.amount);
-          document.getElementById('txnCategory').value = t.category_id;
-          document.getElementById('txnNote').value = t.note || '';
-          document.getElementById('txnSubmit').textContent = 'Save';
-          document.getElementById('txnCancelEdit').style.display = '';
-          document.getElementById('txnCategory').dispatchEvent(new Event('change'));
-          // Store original transaction details for validation during update
-          window._editingTxn = { id: t.id, amount: Number(t.amount), category_id: t.category_id };
-        });
-        const xBtn = document.getElementById(delId);
-        if(xBtn) xBtn.addEventListener('click', async()=>{
-          if(await showConfirm(`Delete "${cat.name}" Transaction ?`)){
-            await fetch(`/api/transaction/${t.id}`, {method:'DELETE'});
-            refresh();
-          }
-        });
+        if(cat && !isDeleted){
+          const eBtn = document.getElementById(editId);
+          if(eBtn) eBtn.addEventListener('click', ()=>{
+            document.getElementById('txnId').value = t.id;
+            document.getElementById('txnDate').value = t.date;
+            document.getElementById('txnAmount').value = Math.abs(t.amount);
+            document.getElementById('txnCategory').value = t.category_id;
+            document.getElementById('txnNote').value = t.note || '';
+            document.getElementById('txnSubmit').textContent = 'Save';
+            document.getElementById('txnCancelEdit').style.display = '';
+            document.getElementById('txnCategory').dispatchEvent(new Event('change'));
+            // Store original transaction details for validation during update
+            window._editingTxn = { id: t.id, amount: Number(t.amount), category_id: t.category_id };
+          });
+          const xBtn = document.getElementById(delId);
+          if(xBtn) xBtn.addEventListener('click', async()=>{
+            const cName = cat ? cat.name : 'this';
+            if(await showConfirm(`Delete "${cName}" ? <br> <span style="font-size: 0.85em; color: var(--muted);">${note}</span>`)){
+              await fetch(`/api/transaction/${t.id}`, {method:'DELETE'});
+              refresh();
+            }
+          });
+        }
       },0);
 
-      const txnColor = cat && {income:'var(--inc)', expense:'var(--exp)', saving:'var(--sav)'}[cat.type] || '#cdd0e0';
+      // Determine display values
+      const txnColor = cat && {income:'var(--inc)', expense:'var(--exp)', saving:'var(--sav)'}[cat.type] || 'var(--muted)';
       const amountText = `<span style="color:${txnColor}">${formatINR(Math.abs(+t.amount || 0))}</span>`;
-      
+      const nameText = cat ? cat.name : 'Unknown';
       const left = `
-        <strong>${cat ? cat.name : 'Unknown'}</strong>
+        <strong>${nameText}</strong>
         <div style="color:#cdd0e0;font-size:12px;margin-top:2px">${t.date} • ${amountText}</div>
         ${t.note ? `<div style="color:#cdd0e0;font-size:12px;margin-top:2px;word-break:break-word">${t.note}</div>` : ''}
       `;
-      const right = btn(editId,'Edit','var(--edit)') + btn(delId,'Delete','var(--del)');
+      // If category missing or deleted, disable edit/delete and show indicator
+      const right = (cat && !isDeleted)
+        ? btn(editId,'Edit','var(--edit)') + btn(delId,'Delete','var(--del)')
+        : pill('Category Deleted');
       return row(left, right);
     }).join('');
   }

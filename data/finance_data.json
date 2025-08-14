@@ -13,7 +13,8 @@
     {
       "id": "38d02076-8e1a-4f16-827d-198c81ba2a61",
       "name": "Transport",
-      "type": "expense"
+      "type": "expense",
+      "deleted": true
     },
     {
       "id": "bf39ba76-0f3c-4558-8860-1c1c6c8eacdb",
@@ -53,7 +54,8 @@
     {
       "id": "ef76c33a-3590-4114-ac29-7ff638fedc39",
       "name": "sonakshi - Goal",
-      "type": "saving"
+      "type": "saving",
+      "deleted": true
     },
     {
       "id": "80a272e0-2452-4935-9bf8-f547ab98c2be",
@@ -69,6 +71,12 @@
       "id": "4e1ad6e2-915c-4b16-bdc3-b7ec483ef490",
       "name": "qweras - Goal",
       "type": "saving"
+    },
+    {
+      "id": "e12a8855-d7a2-4b69-a718-90a3a27596eb",
+      "name": "Transport",
+      "type": "expense",
+      "deleted": false
     }
   ],
   "transactions": [
@@ -263,6 +271,14 @@
       "amount": 12.0,
       "note": "",
       "type": "saving"
+    },
+    {
+      "id": "2a19c10c-2a54-455a-8d6a-d4cd3f179023",
+      "date": "2025-08-14",
+      "category_id": "ef76c33a-3590-4114-ac29-7ff638fedc39",
+      "amount": 589.0,
+      "note": "",
+      "type": "saving"
     }
   ],
   "debts": [
@@ -303,14 +319,6 @@
     }
   ],
   "goals": [
-    {
-      "id": "0f3e615f-57f1-4b0b-9ae3-1a265fd764af",
-      "name": "sonakshi",
-      "target": 54674576.0,
-      "current": 0.0,
-      "deadline": "2025-08-31",
-      "linked_category_id": "ef76c33a-3590-4114-ac29-7ff638fedc39"
-    },
     {
       "id": "e917ab73-cdd3-4c16-ab5c-d5bb8636820e",
       "name": "Emergency Fund",

@@ -11,15 +11,19 @@ app = Flask(__name__)
 # ---------------------- Data helpers ----------------------
 def _load_data():
     if not os.path.exists(DATA_FILE):
+        # Initialize with some default categories. Each category includes a
+        # `deleted` flag so that categories can be soft‑deleted without
+        # losing the reference for existing transactions. A missing flag is
+        # treated as not deleted (False) for backwards compatibility.
         os.makedirs(DATA_DIR, exist_ok=True)
         with open(DATA_FILE, "w", encoding="utf-8") as f:
             json.dump({
                 "categories":[
-                    {"id": str(uuid.uuid4()), "name":"Rent","type":"expense"},
-                    {"id": str(uuid.uuid4()), "name":"Groceries","type":"expense"},
-                    {"id": str(uuid.uuid4()), "name":"Transport","type":"expense"},
-                    {"id": str(uuid.uuid4()), "name":"Emergency Fund","type":"saving"},
-                    {"id": str(uuid.uuid4()), "name":"Salary","type":"income"}
+                    {"id": str(uuid.uuid4()), "name":"Rent","type":"expense", "deleted": False},
+                    {"id": str(uuid.uuid4()), "name":"Groceries","type":"expense", "deleted": False},
+                    {"id": str(uuid.uuid4()), "name":"Transport","type":"expense", "deleted": False},
+                    {"id": str(uuid.uuid4()), "name":"Emergency Fund","type":"saving", "deleted": False},
+                    {"id": str(uuid.uuid4()), "name":"Salary","type":"income", "deleted": False}
                 ],
                 "transactions":[],
                 "debts":[],
@@ -36,9 +40,10 @@ def _save_data(data):
 def _unique_name_excluding(data, desired, exclude_id=None):
     """Return a name unique among categories, ignoring one id (for in-place updates)."""
     base = (desired or "").strip()
-    names = { (c["name"] or "").strip().casefold()
+    # Only consider active (not deleted) categories when determining existing names.
+    names = { (c.get("name") or "").strip().casefold()
               for c in data.get("categories", [])
-              if c.get("id") != exclude_id }
+              if c.get("id") != exclude_id and not c.get("deleted") }
     if base.casefold() not in names:
         return base
     i = 2
@@ -53,7 +58,8 @@ def _next_unique_category_name(data, base, kind_label=None):
     Keep for non-linked categories: if duplicate, prefer semantic suffix.
     (Used when users create categories directly.)
     """
-    existing = {c["name"].strip().casefold() for c in data.get("categories", [])}
+    # Only consider active (not deleted) categories when generating a unique name.
+    existing = {c.get("name", "").strip().casefold() for c in data.get("categories", []) if not c.get("deleted")}
     base_clean = (base or "").strip() or "Untitled"
     if base_clean.casefold() not in existing:
         return base_clean
@@ -87,9 +93,11 @@ def _ensure_linked_category_for_debt(data, debt):
                 c["name"] = desired
                 return c["id"]
 
-    # Create new linked category with suffixed, unique name
+    # Always create a new linked category with a unique name. We intentionally
+    # do not reuse deleted categories so that old transactions remain tied
+    # to their original (now deleted) category.
     name = _unique_name_excluding(data, base, exclude_id=None)
-    new_cat = {"id": str(uuid.uuid4()), "name": name, "type": ctype}
+    new_cat = {"id": str(uuid.uuid4()), "name": name, "type": ctype, "deleted": False}
     data.setdefault("categories", []).append(new_cat)
     debt["linked_category_id"] = new_cat["id"]
     return new_cat["id"]
@@ -111,15 +119,28 @@ def _ensure_linked_category_for_goal(data, goal):
                 c["name"] = desired
                 return c["id"]
 
+    # Always create a new linked category with a unique name. We do not
+    # revive deleted categories so that transactions referencing deleted
+    # categories remain locked.
     name = _unique_name_excluding(data, base, exclude_id=None)
-    new_cat = {"id": str(uuid.uuid4()), "name": name, "type": ctype}
+    new_cat = {"id": str(uuid.uuid4()), "name": name, "type": ctype, "deleted": False}
     data.setdefault("categories", []).append(new_cat)
     goal["linked_category_id"] = new_cat["id"]
     return new_cat["id"]
 
 def _delete_linked_category(data, cat_id):
-    if not cat_id: return
-    data["categories"] = [c for c in data.get("categories", []) if c["id"] != cat_id]
+    """
+    Soft‑delete a linked category by setting its `deleted` flag instead of
+    removing it from the list. This allows existing transactions to
+    continue referencing the category's name while preventing new
+    selections. If the category is not found, no action is taken.
+    """
+    if not cat_id:
+        return
+    for c in data.get("categories", []):
+        if c.get("id") == cat_id:
+            c["deleted"] = True
+            return
 
 # ---------------------- Pages ----------------------
 @app.get("/")
@@ -148,11 +169,16 @@ def api_add_category():
     if not name:
         return jsonify({"error":"Category name required"}), 400
     data = _load_data()
-    names = {c["name"].strip().casefold() for c in data["categories"]}
-    if name.casefold() in names:
+    # Only consider active (not deleted) categories when checking for duplicates
+    active_names = {c["name"].strip().casefold() for c in data.get("categories", []) if not c.get("deleted")}
+    if name.casefold() in active_names:
         return jsonify({"error": f"Category '{name}' already exists"}), 409
-    new_cat = {"id": str(uuid.uuid4()), "name": name, "type": ctype}
-    data["categories"].append(new_cat)
+    # Create a new category with a deleted flag set to False. We deliberately
+    # do not revive soft‑deleted categories with the same name so that
+    # transactions tied to deleted categories remain locked even if a new
+    # category with the same name is created later.
+    new_cat = {"id": str(uuid.uuid4()), "name": name, "type": ctype, "deleted": False}
+    data.setdefault("categories", []).append(new_cat)
     _save_data(data)
     return jsonify(new_cat), 201
 
@@ -160,19 +186,19 @@ def api_add_category():
 def api_update_category(cid):
     p = request.get_json(force=True)
     data = _load_data()
-    for c in data["categories"]:
+    for c in data.get("categories", []):
         if c["id"] == cid:
             if "name" in p:
                 new_name = (p.get("name") or "").strip()
                 if not new_name:
                     return jsonify({"error":"Category name required"}), 400
-                if new_name.casefold() != c["name"].strip().casefold():
-                    names = {x["name"].strip().casefold() for x in data["categories"] if x["id"] != cid}
-                    if new_name.casefold() in names:
-                        return jsonify({"error": f"Category '{new_name}' already exists"}), 409
+                # Only consider active categories (excluding this one) when checking for duplicates
+                active_names = {x["name"].strip().casefold() for x in data.get("categories", []) if x["id"] != cid and not x.get("deleted")}
+                if new_name.casefold() != c.get("name", "").strip().casefold() and new_name.casefold() in active_names:
+                    return jsonify({"error": f"Category '{new_name}' already exists"}), 409
                 c["name"] = new_name
             if "type" in p:
-                c["type"] = p.get("type") or c["type"]
+                c["type"] = p.get("type") or c.get("type")
             _save_data(data)
             return jsonify(c)
     return jsonify({"error":"Not found"}), 404
@@ -181,14 +207,15 @@ def api_update_category(cid):
 def api_delete_category(cid):
     data = _load_data()
     # prevent deleting linked categories
-    if any((d.get("linked_category_id")==cid) for d in data.get("debts",[])) or any((g.get("linked_category_id")==cid) for g in data.get("goals",[])):
+    if any((d.get("linked_category_id") == cid) for d in data.get("debts", [])) or any((g.get("linked_category_id") == cid) for g in data.get("goals", [])):
         return jsonify({"error":"Category is linked to a Debt/Goal and cannot be deleted here"}), 409
-    before = len(data["categories"])
-    data["categories"] = [c for c in data["categories"] if c["id"] != cid]
-    _save_data(data)
-    if len(data["categories"]) == before:
-        return jsonify({"error":"Not found"}), 404
-    return jsonify({"ok":True})
+    # Soft‑delete the category by setting its deleted flag. Do nothing if not found.
+    for c in data.get("categories", []):
+        if c.get("id") == cid:
+            c["deleted"] = True
+            _save_data(data)
+            return jsonify({"ok": True})
+    return jsonify({"error":"Not found"}), 404
 
 # Debts
 @app.post("/api/debt")
