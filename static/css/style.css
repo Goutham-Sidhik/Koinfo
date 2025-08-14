@@ -380,6 +380,7 @@ body {
 .alert--error {
     /* Use solid background for error alerts and white text */
     border-color: var(--bad);
+    height: 65px;
     background: var(--bad);
     color: var(--fg);
 }
@@ -387,6 +388,7 @@ body {
 .alert--info {
     /* Use solid background for error alerts and white text */
     border-color: var(--ok);
+    height: 65px;
     background: var(--ok);
     color: var(--fg);
 }
@@ -394,6 +396,7 @@ body {
 .alert--warn {
     /* Use solid background for warning alerts and white text */
     border-color: var(--warn);
+    height: 65px;
     background: var(--warn);
     color: var(--fg);
 }

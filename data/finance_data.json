@@ -77,6 +77,30 @@
       "name": "Transport",
       "type": "expense",
       "deleted": false
+    },
+    {
+      "id": "c5781bc3-3701-4674-880a-ccdce3fcd102",
+      "name": "Rent - Goal",
+      "type": "saving",
+      "deleted": true
+    },
+    {
+      "id": "a0e31335-d681-4677-ac76-83c3f81f359a",
+      "name": "loan - Goal",
+      "type": "saving",
+      "deleted": true
+    },
+    {
+      "id": "e33c89de-98ae-4769-807c-7a6158398760",
+      "name": "test - Goal",
+      "type": "saving",
+      "deleted": false
+    },
+    {
+      "id": "baa2ddf8-925c-4245-93b2-a1803f1d97b6",
+      "name": "yui - Goal",
+      "type": "saving",
+      "deleted": false
     }
   ],
   "transactions": [
@@ -257,26 +281,42 @@
       "type": "expense"
     },
     {
-      "id": "6e56f931-0eae-4b09-a2c9-0449e5a0336a",
-      "date": "2025-08-14",
-      "category_id": "4e1ad6e2-915c-4b16-bdc3-b7ec483ef490",
-      "amount": 30.0,
-      "note": "",
-      "type": "saving"
-    },
-    {
-      "id": "ac028ea7-2c8e-4abf-85b0-2302ebd58858",
-      "date": "2025-08-14",
-      "category_id": "4e1ad6e2-915c-4b16-bdc3-b7ec483ef490",
-      "amount": 12.0,
-      "note": "",
-      "type": "saving"
-    },
-    {
       "id": "2a19c10c-2a54-455a-8d6a-d4cd3f179023",
       "date": "2025-08-14",
       "category_id": "ef76c33a-3590-4114-ac29-7ff638fedc39",
       "amount": 589.0,
+      "note": "",
+      "type": "saving"
+    },
+    {
+      "id": "88e2c449-e9d6-496c-9ab9-331b60e48370",
+      "date": "2025-08-15",
+      "category_id": "e33c89de-98ae-4769-807c-7a6158398760",
+      "amount": 150.0,
+      "note": "",
+      "type": "saving"
+    },
+    {
+      "id": "57e19d08-0d6c-4619-87c6-b5b8467b9a46",
+      "date": "2025-08-14",
+      "category_id": "e33c89de-98ae-4769-807c-7a6158398760",
+      "amount": 92.0,
+      "note": "",
+      "type": "saving"
+    },
+    {
+      "id": "00f30d00-f8e5-472f-9faa-1772135cd3a5",
+      "date": "2025-08-15",
+      "category_id": "bf39ba76-0f3c-4558-8860-1c1c6c8eacdb",
+      "amount": 1000000.0,
+      "note": "",
+      "type": "saving"
+    },
+    {
+      "id": "1ed51029-78d3-4fb9-9053-db6096f1bf7d",
+      "date": "2025-08-15",
+      "category_id": "bf39ba76-0f3c-4558-8860-1c1c6c8eacdb",
+      "amount": 5000.0,
       "note": "",
       "type": "saving"
     }
@@ -340,10 +380,28 @@
       "id": "c71d28c4-4dfe-4762-a81d-f0dd439bf5dd",
       "name": "qweras",
       "target": 50.0,
-      "current": 57.0,
+      "current": 15.0,
       "deadline": "2025-08-13",
       "created": "2025-08-12",
       "linked_category_id": "4e1ad6e2-915c-4b16-bdc3-b7ec483ef490"
+    },
+    {
+      "id": "71475902-447f-4a8c-9886-c68f4dd65742",
+      "name": "test",
+      "target": 150.0,
+      "current": 243.0,
+      "deadline": "2025-08-16",
+      "created": "2025-08-15",
+      "linked_category_id": "e33c89de-98ae-4769-807c-7a6158398760"
+    },
+    {
+      "id": "8c16b45e-e12c-41ac-84fe-48b23c6561d1",
+      "name": "yui",
+      "target": 450.0,
+      "current": 10.0,
+      "deadline": "2025-08-21",
+      "created": "2025-08-15",
+      "linked_category_id": "baa2ddf8-925c-4245-93b2-a1803f1d97b6"
     }
   ]
 }
