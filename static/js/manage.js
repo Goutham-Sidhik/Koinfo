@@ -46,25 +46,45 @@ function daysBetween(a, b) {
   return Math.floor((d2 - d1) / (1000*60*60*24));
 }
 
-// Returns { label: "12d left" | "Due today" | "Overdue 3d", color: cssColor }
-function goalUrgency(created, deadline) {
+
+// Returns { label: "15d left" | "Due today" | "Overdue 3d", color: cssColor, done: true || false}.
+// If goal reached/exceeded, returns "Completed in Xd" (green) and sets done=true.
+function goalUrgency(created, deadline, current, target, completed_at=null) {
   const today = new Date(); today.setHours(0,0,0,0);
   const end = new Date(deadline); end.setHours(0,0,0,0);
-  if (isNaN(end)) return { label: '', color: '#cdd0e0' };
+  const hasDeadline = !isNaN(end);
 
-  // If no created date, treat today as start
+  // Normalize created
   const start = created ? new Date(created) : new Date(today);
   start.setHours(0,0,0,0);
 
+  // If completed, short‑circuit and show completion tag
+  const t = Number(target) || 0;
+  const c = Number(current) || 0;
+  if (t > 0 && c >= t) {
+    // Prefer explicit completed_at, else estimate using today
+    const finish = completed_at ? new Date(completed_at) : new Date(today);
+    finish.setHours(0,0,0,0);
+    const days = Math.max(0, daysBetween(start, finish));
+    return {
+      label: days ? `Completed in ${days}d` : 'Completed',
+      color: 'var(--ok)',
+      done: true
+    };
+  }
+
+  // Otherwise, compute time remaining vs deadline (if any)
+  if (!hasDeadline) return { label: '', color: '#cdd0e0', done: false };
+
   const left = daysBetween(today, end);
-  if (left < 0) return { label: `Overdue ${Math.abs(left)}d`, color: 'var(--bad)' };  // Overdue
-  if (left === 0) return { label: 'Due today', color: 'var(--warn)' };               // Today
-  if (left <= 15) return { label: `Due in ${left}d`, color: 'var(--warn)' };         // urgent
-  return { label: `${left}d left`,   color: 'var(--ok)' };                        // comfortable
+  if (left < 0)  return { label: `Overdue ${Math.abs(left)}d`, color: 'var(--bad)',  done: false };
+  if (left === 0) return { label: 'Due today',                color: 'var(--warn)', done: false };
+  if (left === 1) return { label: 'Due tomorrow',             color: 'var(--warn)', done: false };
+  if (left <= 15) return { label: `Due in ${left}d`,          color: 'var(--warn)', done: false };
+  return             { label: `${left}d left`,                 color: 'var(--ok)',   done: false };
 }
 
 // Color for CURRENT amount based on progress %
-// <50% = muted, 50–80% = violet, 80–100% = amber, ≥100% = green
 function goalProgressColor(current, target) {
   const t = Math.max(0, Number(target) || 0);
   const c = Math.max(0, Number(current) || 0);
@@ -223,12 +243,12 @@ async function refresh(){
           const el = document.getElementById(delId);
           if(el) el.addEventListener('click', async()=>{
             // Count how many transactions reference this category. These transactions
-            // will become locked once the category is deleted.
+            // will become locked  once the category is deleted.
             const txnCount = (data.transactions || []).filter(tx => tx.category_id === c.id).length;
             const plural = txnCount === 1 ? '' : 's';
             const note = txnCount > 0 ? `\n\nNote: ${txnCount} transaction${plural} will be locked.` : '';
             // Custom confirmation modal with transaction count message
-            if(await showConfirm(`Delete "${c.name}" ? <br> <span style="font-size: 0.85em; color: var(--muted);">${note}</span>`)){
+            if(await showConfirm(`Delete "${c.name}" permanently? <br> <span style="font-size: 0.85em; color: var(--muted);">${note}</span>`)){
               const r = await fetch(`/api/category/${c.id}`, {method:'DELETE'});
               if(!r.ok){ 
                 try{
@@ -272,7 +292,7 @@ async function refresh(){
           const txnCount = (data.transactions || []).filter(tx => tx.category_id === d.linked_category_id).length;
           const plural = txnCount === 1 ? '' : 's';
           const note = txnCount > 0 ? `\n\nNote: ${txnCount} transaction${plural} will be locked.` : '';
-          if(await showConfirm(`Delete "${d.name}" ? <br> <span style="font-size: 0.85em; color: var(--muted);">${note}</span>`)){
+          if(await showConfirm(`Delete "${d.name}" Permanently? <br> <span style="font-size: 0.85em; color: var(--muted);">${note}</span>`)){
             await fetch(`/api/debt/${d.id}`, {method:'DELETE'});
             refresh();
           }
@@ -309,22 +329,22 @@ async function refresh(){
           const txnCount = (data.transactions || []).filter(tx => tx.category_id === g.linked_category_id).length;
           const plural = txnCount === 1 ? '' : 's';
           const note = txnCount > 0 ? `\n\nNote: ${txnCount} transaction${plural} will be locked.` : '';
-          if(await showConfirm(`Delete "${g.name}" ? <br> <span style="font-size: 0.85em; color: var(--muted);">${note}</span>`)){
+          if(await showConfirm(`Delete "${g.name}" permanently? <br> <span style="font-size: 0.85em; color: var(--muted);">${note}</span>`)){
             await fetch(`/api/goal/${g.id}`, {method:'DELETE'});
             refresh();
           }
         });
       },0);
       
-      const urg = goalUrgency(g.created, g.deadline);
+      const urg = goalUrgency(g.created, g.deadline, g.current, g.target, g.completed_at);
       const curColor = goalProgressColor(g.current, g.target);
 
       const left = `
         <div>
           <strong>${g.name}</strong> —
           <span style="color:${curColor}"> ${formatINR(g.current)}</span> / ${formatINR(g.target)}<br>
-          <span style="color:#cdd0e0;font-size:12px">${g.deadline}</span>
-          <span style="color:${urg.color};font-size:12px">• ${urg.label}</span>
+          ${g.deadline ? `<span style="color:#cdd0e0;font-size:12px">${g.deadline}</span>` : ''}
+          <span style="color:${urg.color};font-size:12px">${urg.done ? '• ' : '• '}${urg.label}</span>
         </div>
       `;
       return row(left, btn(editId,'Edit','var(--edit)') + btn(delId,'Delete','var(--del)'));
@@ -362,6 +382,7 @@ async function refresh(){
           const xBtn = document.getElementById(delId);
           if(xBtn) xBtn.addEventListener('click', async()=>{
             const cName = cat ? cat.name : 'this';
+            const note = 'Note: Permanently remove transaction.';
             if(await showConfirm(`Delete "${cName}" ? <br> <span style="font-size: 0.85em; color: var(--muted);">${note}</span>`)){
               await fetch(`/api/transaction/${t.id}`, {method:'DELETE'});
               refresh();
@@ -608,9 +629,26 @@ function updateCycleRange() {
   if (!startDay || startDay < 1 || startDay > 31) { out.textContent = ''; return; }
 
   const today = new Date();
-  const startDate = new Date(today.getFullYear(), today.getMonth(), startDay);
-  const endDate = new Date(startDate);
-  endDate.setMonth(endDate.getMonth() + 1);
+  let y = today.getFullYear();
+  let m = today.getMonth();
+
+  // If today's date is before the start day, the current cycle started last month
+  if (today.getDate() < startDay) {
+    m -= 1;
+    if (m < 0) { m = 11; y -= 1; }
+  }
+
+  // Clamp start day to month's last day (handles 31st, Feb, etc.)
+  const lastDayThisMonth = new Date(y, m + 1, 0).getDate();
+  const startD = Math.min(startDay, lastDayThisMonth);
+  const startDate = new Date(y, m, startD);
+
+  // End date = same anchor next month - 1 day, clamped
+  let ey = y, em = m + 1;
+  if (em > 11) { em = 0; ey += 1; }
+  const lastDayNextMonth = new Date(ey, em + 1, 0).getDate();
+  const endAnchor = Math.min(startDay, lastDayNextMonth);
+  const endDate = new Date(ey, em, endAnchor);
   endDate.setDate(endDate.getDate() - 1);
 
   const format = d => d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short'});
