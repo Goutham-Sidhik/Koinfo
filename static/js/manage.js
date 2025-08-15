@@ -145,22 +145,24 @@ function computeRemainingThisMonth(data, cats){
     return inPeriod(d, prevStart, curStart);
   });
   // Sums for a list
-  const sumIncome  = list => list.filter(t=> typeOf(t.category_id)==='income').reduce((a,t)=>a+Math.abs(+t.amount||0),0);
-  const sumOutflow = list => list.filter(t=> typeOf(t.category_id)!=='income').reduce((a,t)=>a+Math.abs(+t.amount||0),0);
-  const sumExpflow = list => list.filter(t=> typeOf(t.category_id)==='expense').reduce((a,t)=>a+Math.abs(+t.amount||0),0);
-  const sumSavflow = list => list.filter(t=> typeOf(t.category_id)==='saving').reduce((a,t)=>a+Math.abs(+t.amount||0),0);
+  const sumIncome  = list => list.filter(t=> typeOf(t.category_id)==='income' && !t.use_open_balance).reduce((a,t)=>a+Math.abs(+t.amount||0),0);
+  // const sumOutflow = list => list.filter(t=> typeOf(t.category_id)!=='income' && !t.use_open_balance).reduce((a,t)=>a+Math.abs(+t.amount||0),0);
+  const sumExpflow = list => list.filter(t=> typeOf(t.category_id)==='expense' && !t.use_open_balance).reduce((a,t)=>a+Math.abs(+t.amount||0),0);
+  const sumSavflow = list => list.filter(t=> typeOf(t.category_id)==='saving' && !t.use_open_balance).reduce((a,t)=>a+Math.abs(+t.amount||0),0);
   const incPrev = sumIncome(prevTxns);
-  const outPrev = sumOutflow(prevTxns);
-  const prevRemaining = incPrev - outPrev;
+  const expPrev = sumExpflow(prevTxns);
+  const savPrev = sumSavflow(prevTxns);
+  // const outPrev = sumOutflow(prevTxns);
+  const prevRemaining = incPrev - (expPrev + savPrev);
   const incCur = sumIncome(curTxns);
-  const outCur = sumOutflow(curTxns);
+  // const outCur = sumOutflow(curTxns);
   const expCur = sumExpflow(curTxns);
   const savCur = sumSavflow(curTxns);
-  const remaining = prevRemaining + (incCur - outCur);
+  const remaining = prevRemaining + (incCur - (expCur + savCur));
   return { inc: incCur, exp: expCur, sav:savCur, remaining };
 }
 
-function renderRemainingCard(data, cats){
+function renderRemainingCard(data, cats, cycleStart, cycleEnd){
   const amtEl  = document.getElementById('remainingAmt');
   const noteEl = document.getElementById('remainingNote');
   const paceEl = document.getElementById('remainingPace'); // add this element in HTML
@@ -168,16 +170,26 @@ function renderRemainingCard(data, cats){
 
   // Current month figures
   const {inc, exp, sav, remaining} = computeRemainingThisMonth(data, cats);
-  amtEl.textContent = formatINR(remaining);
-  amtEl.style.color = remaining >= 0 ? 'var(--ok)' : 'var(--bad)';
+  // Add the opening balance to the computed remaining amount.  The
+  // opening balance represents money carried over from before using the
+  // app and should be treated as part of the available budget.
+  // const openBal = parseFloat(data.open_balance || 0);
+  // Subtract the sum of all transactions flagged as drawing from the
+  // opening balance so that the final remaining correctly reflects
+  // available funds.  Transactions that use the opening balance reduce
+  // both the balance and the monthly budget.
+
+  const finalRemaining = remaining;
+  amtEl.textContent = formatINR(finalRemaining);
+  amtEl.style.color = finalRemaining >= 0 ? 'var(--ok)' : 'var(--bad)';
 
   // Two-line note with bullets
-  if (remaining > 0) {
+  if (finalRemaining > 0) {
     noteEl.innerHTML = `
       • <span style="color:var(--ok)">Income (${formatINR(inc)})</span><br>
       • Expenses (${formatINR(exp)}) • Savings (${formatINR(sav)})
     `;
-  } else if (remaining == 0) {
+  } else if (finalRemaining == 0) {
     noteEl.innerHTML = `
       • <span style="color:var(--muted)">Income (${formatINR(inc)})</span><br>
       • <span style="color:var(--muted)">Expenses (${formatINR(exp)}) • Savings (${formatINR(sav)})</span>
@@ -191,24 +203,58 @@ function renderRemainingCard(data, cats){
 
   // ----- MTD pace vs last month -----
   if (paceEl) {
-    const today = new Date();
-    const curDay = today.getDate();
-    const curY = today.getFullYear(), curM = today.getMonth();
-    const lastM = (curM + 11) % 12, lastY = curM === 0 ? curY - 1 : curY;
+    // const today = new Date();
+    // const curDay = today.getDate();
+    // const curY = today.getFullYear(), curM = today.getMonth();
+    // const lastM = (curM + 11) % 12, lastY = curM === 0 ? curY - 1 : curY;
 
-    const typeOf = (id)=> (cats.find(c=>c.id===id)||{}).type;
-    const txns = data.transactions || [];
+    // const typeOf = (id)=> (cats.find(c=>c.id===id)||{}).type;
+    // const txns = data.transactions || [];
 
-    const mtdSum = (y,m,day)=>{
-      return txns.filter(t=>{
-        const d = new Date(t.date);
-        return d.getFullYear()===y && d.getMonth()===m && d.getDate()<=day && typeOf(t.category_id)!=='income';
-      }).reduce((a,t)=> a + Math.abs(+t.amount||0), 0);
-    };
+    // const mtdSum = (y,m,day)=>{
+    //   return txns.filter(t=>{
+    //     const d = new Date(t.date);
+    //     return d.getFullYear()===y && d.getMonth()===m && d.getDate()<=day && typeOf(t.category_id)!=='income';
+    //   }).reduce((a,t)=> a + Math.abs(+t.amount||0), 0);
+    // };
 
-    const curMTD  = mtdSum(curY,  curM,  curDay);
-    const lastMTD = mtdSum(lastY, lastM, curDay);
-    const diff    = curMTD - lastMTD;
+    // const curMTD  = mtdSum(curY,  curM,  curDay);
+    // const lastMTD = mtdSum(lastY, lastM, curDay);
+    // const diff    = curMTD - lastMTD;
+
+      const today = new Date();
+
+      const typeOf = (id)=> (cats.find(c=>c.id===id)||{}).type;
+      const txns = data.transactions || [];
+
+      // Helpers
+      const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+      const clamp    = (d, min, max) => d < min ? min : d > max ? max : d;
+
+      // Derive last cycle window from current cycle window
+      const cycleLenDays = Math.round((cycleEnd - cycleStart) / 86400000) + 1;
+      const lastCycleEnd   = addDays(cycleStart, -1);
+      const lastCycleStart = addDays(lastCycleEnd, -(cycleLenDays - 1));
+
+      // "Till date" endpoints
+      const curCTDEnd   = clamp(today, cycleStart, cycleEnd);
+      const daysElapsed = Math.floor((curCTDEnd - cycleStart) / 86400000) + 1; // inclusive
+      const lastCTDEnd  = addDays(lastCycleStart, daysElapsed - 1);
+
+      const sumRange = (from, to) => txns
+        .filter(t => {
+          const d = new Date(t.date);
+          if (d < from || d > to) return false;
+          if (typeOf(t.category_id) === 'income') return false;
+          // If you use this flag in your app, keep this extra guard:
+          if (t.use_open_balance === true) return false;
+          return true;
+        })
+        .reduce((a, t) => a + Math.abs(+t.amount || 0), 0);
+
+      const curCTD  = sumRange(cycleStart, curCTDEnd);
+      const lastCTD = sumRange(lastCycleStart, lastCTDEnd);
+      const diff    = curCTD - lastCTD;
 
     const arrow = diff > 0 ? '▲' : diff < 0 ? '▼' : '＝';
     const text  = diff === 0
@@ -226,6 +272,31 @@ function renderRemainingCard(data, cats){
 async function refresh(){
   const data = await getData();
   const cats = data.categories || [];
+
+  // ----- Opening Balance first‑time notification -----
+  // If no opening balance has been set (value is zero) and we haven't
+  // previously notified the user (tracked via localStorage), show a
+  // one‑button dialog explaining the purpose of the Opening Balance
+  // category.  Once acknowledged, we mark it as notified so it will
+  // not show again in this browser.
+  const openBalCheck = parseFloat(data.open_balance || 0);
+  // localStorage.clear();
+  if((localStorage.getItem('openBalSet') !== '1') && openBalCheck === 0){
+    // Set a flag immediately to avoid re‑prompting during the async call
+    // localStorage.setItem('openBalSet','');
+    setTimeout(async () => {
+      const msg = `
+        <p style="color: var(--fg);">
+          Note: Record unaccounted existing amount in: "Opening Balance"
+        </p>
+        <p style="color: var(--muted); font-size: 0.9em; margin-top: 4px;">
+          It is an already existing amount you may have saved until now.
+        </p>
+      `;
+      await showDialog(msg, 'Got it');
+      localStorage.setItem('openBalSet','1');
+    }, 0);
+  }
   // Derive a list of active (non-deleted) categories for form selections.
   const activeCats = cats.filter(c => !c.deleted);
 
@@ -245,7 +316,8 @@ async function refresh(){
   if (catList) {
     // Only display active categories in the category management list
     const catsForList = cats.filter(c => !c.deleted);
-    catList.innerHTML = catsForList.map(c=>{
+    // Build the HTML for each active category row
+    const catsHtml = catsForList.map(c=>{
       const isLinked = linked.has(c.id);
       const delId = 'delc_' + c.id;
       const right = isLinked ? pill('linked') : btn(delId, ICON_DELETE, 'var(--del)');
@@ -254,7 +326,7 @@ async function refresh(){
           const el = document.getElementById(delId);
           if(el) el.addEventListener('click', async()=>{
             // Count how many transactions reference this category. These transactions
-            // will become locked  once the category is deleted.
+            // will become locked once the category is deleted.
             const txnCount = (data.transactions || []).filter(tx => tx.category_id === c.id).length;
             const plural = txnCount === 1 ? '' : 's';
             const note = txnCount > 0 ? `\n\nNote: ${txnCount} transaction${plural} will be locked.` : '';
@@ -278,6 +350,76 @@ async function refresh(){
                           c.type === 'saving' ? 'var(--sav)' : 'rgba(255,255,255,.15)'; 
       return row(`${c.name} ${pillBorder(c.type, borderColor)}`, right);
     }).join('');
+
+    // ----- Opening Balance row -----
+    const openBal = parseFloat(data.open_balance || 0);
+    // Compute how much of the opening balance remains based on
+    // transactions explicitly marked as drawing from it.  We sum the
+    // absolute values of all transactions with the use_open_balance flag.
+    let openBalRemaining = openBal;
+    {
+      const allTxns = data.transactions || [];
+      const totalUsed = allTxns
+        .filter(t => t.use_open_balance)
+        .reduce((a, t) => a + Math.abs(+t.amount || 0), 0);
+      openBalRemaining = openBal - totalUsed;
+      if(openBalRemaining < 0) openBalRemaining = 0;
+    }
+    // Build the opening balance row HTML.  If no opening balance set, we
+    // display an invitation to add one.  Otherwise we show remaining vs
+    // added values.  The edit button allows updating the value.
+    const allTxns = data.transactions || [];
+    const totalUsed = allTxns
+        .filter(t => t.use_open_balance)
+        .reduce((a, t) => a + Math.abs(+t.amount || 0), 0);
+    let openLabel;
+    if(openBal > 0){
+      openLabel = `\
+        <div>
+          <strong>Opening Balance</strong><br>
+          • <span style="font-size:12px;color:var(--sav)"> ${formatINR(totalUsed)} / ${formatINR(openBal)}</span>
+        </div>
+      `;
+    } else {
+      openLabel = `\
+        <div>
+          <strong>Opening Balance</strong><br>
+          <span style="font-size:12px;color:var(--muted)">Not set</span>
+        </div>
+      `;
+    }
+    const openRow = row(openLabel, btn('edit_openBal', ICON_EDIT, 'var(--edit)'));
+    catList.innerHTML = openRow + catsHtml;
+    // Attach event for editing the opening balance
+    setTimeout(() => {
+      const b = document.getElementById('edit_openBal');
+      if(b){
+        b.addEventListener('click', async () => {
+          // Use a custom prompt dialog for entering the opening balance
+          const ans = await showPromptInput('Enter opening balance amount:', 'Amount', openBal > 0 ? String(openBal) : '');
+          if(ans === null) return;
+          const trimmed = String(ans).replace(/,/g,'').trim();
+          const val = parseFloat(trimmed);
+          if (isNaN(val) || val < 0) return showAlert('Enter valid amount', 'error');
+          const allTxns = data.transactions || [];
+          const totalUsed = allTxns
+              .filter(t => t.use_open_balance)
+              .reduce((a, t) => a + Math.abs(+t.amount || 0), 0);
+          if (val < totalUsed) return showAlert(`Opening Balance ≥ Used (${formatINR(totalUsed)})`, 'error');
+          // Persist the new value via API
+          const res = await fetch('/api/open_balance', {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({open_balance: val})});
+          if(!res.ok){
+            let msg = res.status;
+            try{ const j = await res.json(); if(j?.error) msg = j.error; }catch{}
+            showAlert('Save opening balance failed: '+msg, 'error');
+            return;
+          }
+          // Mark that we've set the opening balance so we don't prompt again
+          localStorage.setItem('openBalSet','1');
+          refresh();
+        });
+      }
+    }, 0);
   }
 
   // ----- Debts list -----
@@ -330,7 +472,6 @@ async function refresh(){
           document.getElementById('goalId').value = g.id;
           document.getElementById('goalName').value = g.name;
           document.getElementById('goalTarget').value = g.target;
-          document.getElementById('goalCurrent').value = g.current;
           document.getElementById('goalDeadline').value = g.deadline;
           document.getElementById('goalSubmit').textContent = 'Save Goal';
           document.getElementById('goalCancelEdit').style.display = '';
@@ -364,10 +505,6 @@ async function refresh(){
   }
 
   // ----- Remaining card (top-left, separate section) -----
-  renderRemainingCard(data, cats);
-
-  // ----- Transactions list (current cycle) -----
-  // Compute the start and end of the current budget cycle based on
   // the selected cycle start day (window._cycleStartDay).  If today's date
   // is before the start day, the cycle began last month; otherwise, it
   // started this month.  The cycle ends just before the same day in the
@@ -384,6 +521,11 @@ async function refresh(){
   }
   // The end of the cycle is the same anchor day in the next month
   const cycleEnd = new Date(cycleStart.getFullYear(), cycleStart.getMonth() + 1, cycleStart.getDate());
+
+  renderRemainingCard(data, cats, cycleStart, cycleEnd);
+
+  // ----- Transactions list (current cycle) -----
+  // Compute the start and end of the current budget cycle based on
   // Filter transactions within [cycleStart, cycleEnd)
   const txns = [...(data.transactions || [])]
     .filter(t => {
@@ -404,16 +546,22 @@ async function refresh(){
         if(cat && !isDeleted){
           const eBtn = document.getElementById(editId);
           if(eBtn) eBtn.addEventListener('click', ()=>{
-            document.getElementById('txnId').value = t.id;
+          document.getElementById('txnId').value = t.id;
             document.getElementById('txnDate').value = t.date;
             document.getElementById('txnAmount').value = Math.abs(t.amount);
             document.getElementById('txnCategory').value = t.category_id;
             document.getElementById('txnNote').value = t.note || '';
+            // Set the opening balance checkbox state and disable it when editing
+            const openChk = document.getElementById('txnUseOpenBal');
+            if(openChk){
+              openChk.checked = !!t.use_open_balance;
+              openChk.disabled = true;
+            }
             document.getElementById('txnSubmit').textContent = 'Save';
             document.getElementById('txnCancelEdit').style.display = '';
             document.getElementById('txnCategory').dispatchEvent(new Event('change'));
             // Store original transaction details for validation during update
-            window._editingTxn = { id: t.id, amount: Number(t.amount), category_id: t.category_id };
+            window._editingTxn = { id: t.id, amount: Number(t.amount), category_id: t.category_id, use_open_balance: !!t.use_open_balance };
           });
           const xBtn = document.getElementById(delId);
           if(xBtn) xBtn.addEventListener('click', async()=>{
@@ -430,11 +578,13 @@ async function refresh(){
       // Determine display values
       const txnColor = cat && {income:'var(--inc)', expense:'var(--exp)', saving:'var(--sav)'}[cat.type] || 'var(--muted)';
       const amountText = `<span style="color:${txnColor}">${formatINR(Math.abs(+t.amount || 0))}</span>`;
+      const pillOB = t.use_open_balance ? 'openBal' : '';
       const nameText = cat ? cat.name : 'Unknown';
+      const firstLine = pillOB === 'openBal' ? `<strong>${nameText}</strong> <span style="margin-left:20px;">${pill(pillOB)}</span? <br>` : `<strong>${nameText}</strong>`;
       const left = `
-        <strong>${nameText}</strong>
-        <div style="color:#cdd0e0;font-size:12px;margin-top:2px">${t.date} • ${amountText}</div>
-        ${t.note ? `<div style="color:#cdd0e0;font-size:12px;margin-top:2px;word-break:break-word">${t.note}</div>` : ''}
+        ${firstLine}
+        <div style="color:#cdd0e0;font-size:12px;margin-top:12px">${t.date} • ${amountText}</div>
+        ${t.note ? `<div style="color:#cdd0e0;font-size:12px;margin-top:12px;word-break:break-word">${t.note}</div>` : ''}
       `;
       // If category missing or deleted, disable edit/delete and show indicator
       const right = (cat && !isDeleted)
@@ -477,6 +627,8 @@ document.getElementById('txnForm')?.addEventListener('submit', async (e)=>{
   const payload = Object.fromEntries(fd.entries());
   let amt = Math.abs(parseFloat(payload.amount||0));
   const selCat = payload.category_id;
+  // Capture whether this transaction should draw from the opening balance.
+  const useOpenBal = document.getElementById('txnUseOpenBal')?.checked;
 
   // Determine if editing an existing transaction and capture its original amount and category
   const editing = id && window._editingTxn && window._editingTxn.id === id;
@@ -493,6 +645,11 @@ document.getElementById('txnForm')?.addEventListener('submit', async (e)=>{
   const catType = catObj.type || 'expense';
   // Compute the current remaining amount (includes carry‑forward)
   const { remaining: budgetRemaining } = computeRemainingThisMonth(data, cats);
+  // Include the opening balance when determining available funds for
+  // outflow.  Opening balance should augment the budget.
+  const budgetRemainingIncludingOpen = useOpenBal
+  ? budgetRemaining + parseFloat(data.open_balance || 0)
+  : budgetRemaining;
   let deltaOut = 0;
   if (catType !== 'income') {
     if (editing && oldCat === selCat) {
@@ -504,8 +661,8 @@ document.getElementById('txnForm')?.addEventListener('submit', async (e)=>{
       deltaOut = amt;
     }
   }
-  if(deltaOut > budgetRemaining){
-    showAlert('Txn Exceeds Available Amount', 'error');
+  if(deltaOut > budgetRemainingIncludingOpen){
+    showAlert('Exceeds Available Amount', 'error');
     return;
   }
 
@@ -551,7 +708,7 @@ document.getElementById('txnForm')?.addEventListener('submit', async (e)=>{
     }
   }
 
-  const body = {date: payload.date, amount: amt, category_id: selCat, note: payload.note};
+  const body = {date: payload.date, amount: amt, category_id: selCat, note: payload.note, use_open_balance: !!useOpenBal};
 
   if(id){
     await fetch(`/api/transaction/${id}`, {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
@@ -571,6 +728,12 @@ document.getElementById('txnCancelEdit')?.addEventListener('click', ()=>{
   document.getElementById('txnId').value = '';
   document.getElementById('txnSubmit').textContent = 'Add';
   document.getElementById('txnCancelEdit').style.display = 'none';
+  // Reset and enable the opening balance checkbox when cancelling edit
+  const openChk = document.getElementById('txnUseOpenBal');
+  if(openChk){
+    openChk.disabled = false;
+    openChk.checked = false;
+  }
 });
 
 // Debts
@@ -619,7 +782,10 @@ document.getElementById('goalForm')?.addEventListener('submit', async (e)=>{
     showAlert('Please choose a deadline after today', 'error'); 
     return; 
   }
-  const body = { name: p.name, target: parseFloat(p.target||0), current: parseFloat(p.current||0), deadline: p.deadline };
+  // Build the request body for goals.  We deliberately do not send a
+  // 'current' property because progress is tracked automatically via
+  // transactions.  Users cannot set the current amount manually.
+  const body = { name: p.name, target: parseFloat(p.target||0), deadline: p.deadline };
   let res;
   if(id){
     res = await fetch(`/api/goal/${id}`, {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
