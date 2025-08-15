@@ -1,33 +1,81 @@
 {
   "categories": [
     {
-      "id": "9068ede4-22ab-43b7-a817-98ca555d5012",
+      "id": "f1e7b4b2-bb04-4e4e-a25e-26db07b8332b",
       "name": "Rent",
       "type": "expense",
+      "deleted": true
+    },
+    {
+      "id": "6ce8404b-4158-4a38-88e6-283d4b03993c",
+      "name": "Groceries",
+      "type": "expense",
+      "deleted": true
+    },
+    {
+      "id": "ec23aa57-ee9e-4791-899d-fc7b462e7e0c",
+      "name": "Transport",
+      "type": "expense",
+      "deleted": true
+    },
+    {
+      "id": "bebf160b-f55f-4f5a-ae30-b8da3b02eb58",
+      "name": "Savings",
+      "type": "saving",
+      "deleted": true
+    },
+    {
+      "id": "b16188b5-edf8-472a-bb78-1e14d313d16b",
+      "name": "Salary",
+      "type": "income",
       "deleted": false
     },
     {
-      "id": "4641d154-6e0f-4581-8f26-cae8e146c820",
+      "id": "9fad1bed-4a71-47a8-ab6a-cfcf2f805a08",
+      "name": "qweras - Debt",
+      "type": "expense",
+      "deleted": true
+    },
+    {
+      "id": "7236a631-f15a-4ca0-8be3-53bbbb778d68",
+      "name": "qweras - Debt",
+      "type": "expense",
+      "deleted": true
+    },
+    {
+      "id": "91aa1b59-b816-4869-bb44-071be23af1af",
+      "name": "qweras - Debt",
+      "type": "expense",
+      "deleted": true
+    },
+    {
+      "id": "0974d619-17e9-4c53-bfb9-b91dbfd0ec40",
+      "name": "Rent",
+      "type": "expense",
+      "deleted": true
+    },
+    {
+      "id": "9b8bee39-f935-4984-8d51-90ba44d7ac43",
+      "name": "Rent",
+      "type": "expense",
+      "deleted": true
+    },
+    {
+      "id": "29e866ba-fc99-4cb8-a7ef-1141f9315fe3",
+      "name": "Transport",
+      "type": "expense",
+      "deleted": true
+    },
+    {
+      "id": "24b3501c-b850-4d89-81d1-b565f80d09ad",
       "name": "Groceries",
       "type": "expense",
       "deleted": false
     },
     {
-      "id": "b237adfa-f1bc-45e9-ad74-f3581a9b5254",
-      "name": "Transport",
-      "type": "expense",
-      "deleted": false
-    },
-    {
-      "id": "47901793-f45c-4dbb-a2dc-4cf2098bb468",
-      "name": "Savings",
+      "id": "9773faa7-2d91-445e-9a46-51ca550c4f8f",
+      "name": "Investments",
       "type": "saving",
-      "deleted": false
-    },
-    {
-      "id": "7e7f5e47-0a60-4a7f-b301-b61f437dd7d1",
-      "name": "Salary",
-      "type": "income",
       "deleted": false
     }
   ],

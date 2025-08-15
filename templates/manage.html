@@ -3,7 +3,9 @@
 {% block content %}
 <section class="grid grid--manage">
   <div class="card card--txnform">
-    <h2 class="card__title">Add / Edit Transaction</h2>
+    <h2 class="card__title">Activity
+      <span style="color: var(--muted);font-size:small;">(Add / Update Logs)</span>
+    </h2>
     <form id="txnForm" class="form form--2col">
       <input type="hidden" name="id" id="txnId">
       <input type="date" name="date" id="txnDate" required>
@@ -24,7 +26,9 @@
    <div class="card card--remaining">
     <!-- Header row for remaining amount and budget start day selector. Using flex to align items side by side. -->
     <div class="remaining-header" style="display: flex; justify-content: space-between; align-items: center;">
-      <h2 class="card__title" style="margin:0">Balance Amount</h2>
+      <h2 class="card__title" style="margin:0">Balance
+        <span style="color: var(--muted);font-size:small;">(Cycle Till Date)</span>
+      </h2>
       <!-- Inline label and input for selecting the start day of the budget cycle -->
       <span style="display: flex; align-items: center; font-size: 0.9rem; color: var(--accent3);">
         Cycle Begins on:
@@ -41,7 +45,9 @@
   </div>
 
   <div class="card card--goals">
-    <h2 class="card__title">Goals</h2>
+    <h2 class="card__title">Goals
+      <span style="color: var(--muted);font-size:small;">(Track Savings)</span>
+    </h2>
     <form id="goalForm" class="form form--2col">
       <input type="hidden" name="id" id="goalId">
       <input name="name" id="goalName" placeholder="Goal name" required>
@@ -52,12 +58,14 @@
         <button id="goalCancelEdit" type="button" class="btn btn--ghost" style="display:none">Cancel</button>
       </div>
     </form>
-    <div class="stack scroll" id="goalList"></div>
+    <div class="stack scroll" id="goalList" style="text-transform: capitalize;"></div>
   </div>
   <div class="card card--categories">
-    <h2 class="card__title">Category</h2>
+    <h2 class="card__title">Category
+      <span style="color: var(--muted);font-size:small;">(Money Groups)</span>
+    </h2>
     <form id="catForm" class="form form--3col">
-      <input name="name" placeholder="Category name" required>
+      <input name="name" placeholder="Category name" required style="text-transform: capitalize;">
       <select name="type">
         <option value="expense">Expense</option>
         <option value="saving">Saving</option>
@@ -65,16 +73,18 @@
       </select>
       <button class="btn btn--primary" type="submit">Create</button>
     </form>
-    <div class="stack scroll" id="catList"></div>
+    <div class="stack scroll" id="catList" style="text-transform: capitalize;"></div>
   </div>
   <div class="card card--debts">
-    <h2 class="card__title">Debts</h2>
+    <h2 class="card__title">Debts
+      <span style="color: var(--muted);font-size:small;">(Dues & Claims)</span>
+    </h2>
     <form id="debtForm" class="form form--2col">
       <input type="hidden" name="id" id="debtId">
       <input name="name" id="debtName" placeholder="Name" required>
       <input type="number" min="1" name="balance" id="debtBalance" placeholder="Balance" required>
       <select name="kind" id="debtKind">
-        <option value="payable">Payable (Debt)</option>
+        <option value="payable">Payable (Dues)</option>
         <option value="receivable">Receivable (Claims)</option>
       </select>
       <div class="row">
@@ -82,11 +92,13 @@
         <button id="debtCancelEdit" type="button" class="btn btn--ghost" style="display:none">Cancel</button>
       </div>
     </form>
-    <div class="stack scroll" id="debtList"></div>
+    <div class="stack scroll" id="debtList" style="text-transform: capitalize;"></div>
   </div>
   <div class="card card--transactions">
-    <h2 class="card__title">Transactions</h2>
-    <div id="txnList" class="stack scroll fill"></div>
+    <h2 class="card__title">Transactions
+      <span style="color: var(--muted);font-size:small;">(Cycle History)</span>
+    </h2>
+    <div id="txnList" class="stack scroll fill" style="text-transform: capitalize;"></div>
   </div>
 </section>
 <script src="{{ url_for('static', filename='js/manage.js') }}"></script>
