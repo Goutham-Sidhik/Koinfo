@@ -19,7 +19,8 @@
 }
 
 * {
-    box-sizing: border-box
+    box-sizing: border-box;
+    font-family: 'Brush Script MT', cursive;
 }
 
 html,
@@ -29,7 +30,7 @@ body {
 
 body {
     margin: 0;
-    font-family: Inter, system-ui, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+    font-family: 'Brush Script MT', cursive;
     background: linear-gradient(120deg, #121a3a 0%, #090f1f 100%);
     color: var(--fg)
 }
@@ -263,7 +264,7 @@ body {
 }
 
 .remaining-note {
-    margin-top: 6px;
+    /* margin-top: 6px; */
     font-size: 0.9rem;
     color: var(--muted);
 }
@@ -283,6 +284,18 @@ body {
 .fill {
     flex: 1;
     min-height: 0
+}
+
+#debtName {
+  text-transform: capitalize;
+}
+
+#catForm.Name {
+  text-transform: capitalize;
+}
+
+#goalName {
+  text-transform: capitalize;
 }
 
 @media (max-width:1024px) {

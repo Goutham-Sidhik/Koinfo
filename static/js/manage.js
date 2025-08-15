@@ -258,8 +258,8 @@ function renderRemainingCard(data, cats, cycleStart, cycleEnd){
 
     const arrow = diff > 0 ? '▲' : diff < 0 ? '▼' : '＝';
     const text  = diff === 0
-      ? 'same as last month MTD'
-      : `${formatINR(Math.abs(diff))} vs last month MTD`;
+      ? 'same as last CTD'
+      : `${formatINR(Math.abs(diff))} vs last CTD`;
 
     // Optional coloring: up (more outflow) = red, down = green
     paceEl.textContent = `${arrow} ${text}`;
@@ -306,8 +306,15 @@ async function refresh(){
 
   // Populate category select (transactions form) using only active categories
   const txnCat = document.getElementById('txnCategory');
-  if (txnCat) txnCat.innerHTML = activeCats.map(option).join('');
-
+  // if (txnCat) txnCat.innerHTML = activeCats.map(option).join('');
+  if (txnCat) {
+    // Sort categories in alphanumeric order by name
+    const sortedCats = [...activeCats].sort((a, b) =>
+      a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' })
+    );
+    txnCat.innerHTML = sortedCats.map(option).join('');
+  }
+  
   document.getElementById('txnCategory').dispatchEvent(new Event('change'));
 
   // ----- Categories list (block delete for linked ones) -----
@@ -316,6 +323,10 @@ async function refresh(){
   if (catList) {
     // Only display active categories in the category management list
     const catsForList = cats.filter(c => !c.deleted);
+    // Sort in alphanumeric order by name
+    catsForList.sort((a, b) =>
+      a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' })
+    );
     // Build the HTML for each active category row
     const catsHtml = catsForList.map(c=>{
       const isLinked = linked.has(c.id);
@@ -425,7 +436,10 @@ async function refresh(){
   // ----- Debts list -----
   const debtList = document.getElementById('debtList');
   if (debtList) {
-    debtList.innerHTML = (data.debts||[]).map(d=>{
+    const sortedDebts = (data.debts || []).slice().sort((a, b) =>
+      a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' })
+    );
+    debtList.innerHTML = sortedDebts.map(d=>{
       const editId = 'editd_' + d.id;
       const delId = 'deld_' + d.id;
       const kindLabel = d.kind === 'receivable' ? 'Receivable (Claims)' : 'Payable (Debt)';
@@ -463,7 +477,10 @@ async function refresh(){
   // ----- Goals list -----
   const goalList = document.getElementById('goalList');
   if (goalList) {
-    goalList.innerHTML = (data.goals||[]).map(g=>{
+    const sortedGoals = (data.goals || []).slice().sort((a, b) =>
+      a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' })
+    );
+    goalList.innerHTML = sortedGoals.map(g=>{
       const editId = 'editg_' + g.id;
       const delId = 'delg_' + g.id;
       setTimeout(()=>{
@@ -532,7 +549,21 @@ async function refresh(){
       const d = new Date(t.date);
       return d >= cycleStart && d < cycleEnd;
     })
-    .sort((a,b) => new Date(b.date) - new Date(a.date));
+    .sort((a, b) => {
+      // 1) date desc (by day, ignoring time)
+      const dd = new Date(b.date) - new Date(a.date);
+      if (dd !== 0) return dd;
+
+      // 2) alphanumeric by name/description (A2 before A10)
+      const aKey = (a.name ?? a.description ?? '').toString();
+      const bKey = (b.name ?? b.description ?? '').toString();
+      const cmp = aKey.localeCompare(bKey, undefined, { numeric: true, sensitivity: 'base' });
+      if (cmp !== 0) return cmp;
+
+      // 3) stable fallback
+      return (a.id ?? 0) - (b.id ?? 0);
+    });
+    // .sort((a,b) => new Date(b.date) - new Date(a.date));
 
   const txnList = document.getElementById('txnList');
   if (txnList) {
@@ -681,7 +712,7 @@ document.getElementById('txnForm')?.addEventListener('submit', async (e)=>{
       }
       if(tgt > 0 && projected > tgt){
         const over = projected - tgt;
-        showAlert(`Heads up: Exceeding goal by ${formatINR(over)}.`, 'warn');
+        showAlert(`Goal Exceeded by ${formatINR(over)}.`, 'warn');
       }
       if(tgt > 0 && projected == tgt){
         showAlert(`Hurray: Goal Reached.`, 'info');

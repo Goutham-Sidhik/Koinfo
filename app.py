@@ -25,11 +25,12 @@ def _load_data():
         with open(DATA_FILE, "w", encoding="utf-8") as f:
             json.dump({
                 "categories":[
-                    {"id": str(uuid.uuid4()), "name":"Rent","type":"expense", "deleted": False},
+                    {"id": str(uuid.uuid4()), "name":"Salary","type":"income", "deleted": False},
+                    # {"id": str(uuid.uuid4()), "name":"Rent","type":"expense", "deleted": False},
                     {"id": str(uuid.uuid4()), "name":"Groceries","type":"expense", "deleted": False},
-                    {"id": str(uuid.uuid4()), "name":"Transport","type":"expense", "deleted": False},
-                    {"id": str(uuid.uuid4()), "name":"Savings","type":"saving", "deleted": False},
-                    {"id": str(uuid.uuid4()), "name":"Salary","type":"income", "deleted": False}
+                    # {"id": str(uuid.uuid4()), "name":"Transport","type":"expense", "deleted": False},
+                    {"id": str(uuid.uuid4()), "name":"Investments","type":"saving", "deleted": False},
+                    
                 ],
                 "transactions":[],
                 "debts":[],
@@ -66,26 +67,26 @@ def _unique_name_excluding(data, desired, exclude_id=None):
             return cand
         i += 1
 
-def _next_unique_category_name(data, base, kind_label=None):
-    """
-    Keep for non-linked categories: if duplicate, prefer semantic suffix.
-    (Used when users create categories directly.)
-    """
-    # Only consider active (not deleted) categories when generating a unique name.
-    existing = {c.get("name", "").strip().casefold() for c in data.get("categories", []) if not c.get("deleted")}
-    base_clean = (base or "").strip() or "Untitled"
-    if base_clean.casefold() not in existing:
-        return base_clean
-    if kind_label:
-        candidate = f"{base_clean} - {kind_label}"
-        if candidate.casefold() not in existing:
-            return candidate
-    i = 2
-    while True:
-        cand = f"{base_clean} - {kind_label} {i}" if kind_label else f"{base_clean} ({i})"
-        if cand.casefold() not in existing:
-            return cand
-        i += 1
+# def _next_unique_category_name(data, base, kind_label=None):
+#     """
+#     Keep for non-linked categories: if duplicate, prefer semantic suffix.
+#     (Used when users create categories directly.)
+#     """
+#     # Only consider active (not deleted) categories when generating a unique name.
+#     existing = {c.get("name", "").strip().casefold() for c in data.get("categories", []) if not c.get("deleted")}
+#     base_clean = (base or "").strip() or "Untitled"
+#     if base_clean.casefold() not in existing:
+#         return base_clean
+#     if kind_label:
+#         candidate = f"{base_clean} - {kind_label}"
+#         if candidate.casefold() not in existing:
+#             return candidate
+#     i = 2
+#     while True:
+#         cand = f"{base_clean} - {kind_label} {i}" if kind_label else f"{base_clean} ({i})"
+#         if cand.casefold() not in existing:
+#             return cand
+#         i += 1
 
 # --- Linked category helpers (ALWAYS show origin suffix) ---
 def _ensure_linked_category_for_debt(data, debt):
