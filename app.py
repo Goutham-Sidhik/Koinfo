@@ -10,6 +10,12 @@ app = Flask(__name__)
 
 # ---------------------- Data helpers ----------------------
 def _load_data():
+    """
+    Load the JSON finance data file.  If the file does not exist, create a
+    default dataset with some starting categories and zeroed lists.  The
+    returned dict will always contain an ``open_balance`` field so the
+    application can support an optional opening balance.
+    """
     if not os.path.exists(DATA_FILE):
         # Initialize with some default categories. Each category includes a
         # `deleted` flag so that categories can be soft‑deleted without
@@ -27,10 +33,17 @@ def _load_data():
                 ],
                 "transactions":[],
                 "debts":[],
-                "goals":[]
+                "goals":[],
+                # An optional starting balance to carry over from before using
+                # the app.  Users can update this value via the API.
+                "open_balance": 0.0
             }, f, ensure_ascii=False, indent=2)
     with open(DATA_FILE, "r", encoding="utf-8") as f:
-        return json.load(f)
+        data = json.load(f)
+    # Ensure the open_balance key is always present
+    if "open_balance" not in data:
+        data["open_balance"] = 0.0
+    return data
 
 def _save_data(data):
     with open(DATA_FILE, "w", encoding="utf-8") as f:
@@ -292,7 +305,11 @@ def api_add_goal():
     if name.casefold() in names:
         return jsonify({"error": f"Goal '{name}' already exists"}), 409
     created = date.today().isoformat()
-    g = {"id": str(uuid.uuid4()), "name": name, "target": float(p.get("target") or 0), "current": float(p.get("current") or 0), "deadline": deadline, "created": created,}
+    # New goals always start at zero progress.  The 'current' field from
+    # the payload is ignored to prevent users from injecting arbitrary
+    # current values.  The current progress will accumulate from
+    # transactions in the linked category.
+    g = {"id": str(uuid.uuid4()), "name": name, "target": float(p.get("target") or 0), "current": 0.0, "deadline": deadline, "created": created,}
     _ensure_linked_category_for_goal(data, g)
     data.setdefault("goals", []).append(g)
     _save_data(data)
@@ -313,8 +330,12 @@ def api_update_goal(gid):
                     if new_name.casefold() in names:
                         return jsonify({"error": f"Goal '{new_name}' already exists"}), 409
                 g["name"] = new_name
-            if "target" in p: g["target"] = float(p["target"])
-            if "current" in p: g["current"] = float(p["current"])
+            if "target" in p:
+                # Always update the target if provided
+                g["target"] = float(p["target"])
+            # Intentionally ignore any 'current' value from the payload to
+            # prevent manual manipulation of progress.  The current value
+            # is updated automatically based on transactions.
             if "deadline" in p:
                 try:
                     dl = date.fromisoformat(p.get("deadline") or "")
@@ -345,12 +366,14 @@ def api_delete_goal(gid):
 def api_add_txn():
     p = request.get_json(force=True)
     data = _load_data()
+    # Respect use_open_balance flag from client; treat missing as False.
     txn = {
         "id": str(uuid.uuid4()),
         "date": p.get("date") or date.today().isoformat(),
         "category_id": p.get("category_id"),
         "amount": float(p.get("amount") or 0),
         "note": p.get("note", ""),
+        "use_open_balance": bool(p.get("use_open_balance"))
     }
     c = next((c for c in data["categories"] if c["id"] == txn["category_id"]), None)
     if not c:
@@ -392,6 +415,14 @@ def api_update_txn(tid):
     new_cat  = p.get("category_id", old["category_id"])
     new_amt  = float(p.get("amount", old.get("amount") or 0.0))
     new_note = p.get("note", old.get("note", ""))
+
+    # Determine the new value for use_open_balance.  If the client
+    # explicitly passes this flag, cast it to bool; otherwise keep the
+    # existing value.  This prevents accidental toggles when editing.
+    if "use_open_balance" in p:
+        new_use_open = bool(p.get("use_open_balance"))
+    else:
+        new_use_open = bool(old.get("use_open_balance", False))
 
     # validate category
     cat = next((c for c in data.get("categories", []) if c["id"] == new_cat), None)
@@ -439,6 +470,7 @@ def api_update_txn(tid):
         "amount": new_amt,
         "note": new_note,
         "type": cat["type"],
+        "use_open_balance": new_use_open
     })
 
     _save_data(data)
@@ -470,6 +502,26 @@ def api_delete_txn(tid):
     data["transactions"] = [t for t in data.get("transactions", []) if t["id"] != tid]
     _save_data(data)
     return jsonify({"ok": True})
+
+# ---------------------- Opening Balance ----------------------
+@app.put("/api/open_balance")
+def api_update_open_balance():
+    """
+    Update the global opening balance.  This value represents money
+    brought forward before using the app and is added to the remaining
+    budget calculations.  The client must send a JSON body with an
+    ``open_balance`` numeric field.  Returns the updated value on
+    success.
+    """
+    p = request.get_json(force=True)
+    try:
+        new_val = float(p.get("open_balance", 0))
+    except Exception:
+        return jsonify({"error": "Invalid open_balance value"}), 400
+    data = _load_data()
+    data["open_balance"] = new_val
+    _save_data(data)
+    return jsonify({"open_balance": new_val})
 
 # Downloads
 @app.get("/download/json")

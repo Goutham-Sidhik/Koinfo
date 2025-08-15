@@ -10,6 +10,11 @@
       <input type="number" min="1" name="amount" id="txnAmount" placeholder="Amount" required>
       <select name="category_id" id="txnCategory" required></select>
       <input type="text" name="note" id="txnNote" placeholder="Note (optional)">
+      <!-- Checkbox to mark if the transaction should draw from the opening balance -->
+      <label style="display:flex; align-items:center; font-size:12px; gap:6px; margin-top:4px;">
+        <input type="checkbox" id="txnUseOpenBal" name="use_open_balance" style="accent-color: var(--edit);">
+        <span>Use Opening Balance</span>
+      </label>
       <div class="row">
         <button id="txnSubmit" class="btn btn--primary" type="submit">Add</button>
         <button id="txnCancelEdit" type="button" class="btn btn--ghost" style="display:none">Cancel</button>
@@ -19,7 +24,7 @@
    <div class="card card--remaining">
     <!-- Header row for remaining amount and budget start day selector. Using flex to align items side by side. -->
     <div class="remaining-header" style="display: flex; justify-content: space-between; align-items: center;">
-      <h2 class="card__title" style="margin:0">Remaining Amount</h2>
+      <h2 class="card__title" style="margin:0">Balance Amount</h2>
       <!-- Inline label and input for selecting the start day of the budget cycle -->
       <span style="display: flex; align-items: center; font-size: 0.9rem; color: var(--accent3);">
         Cycle Begins on:
@@ -41,7 +46,6 @@
       <input type="hidden" name="id" id="goalId">
       <input name="name" id="goalName" placeholder="Goal name" required>
       <input type="number" min="1" name="target" id="goalTarget" placeholder="Target" required>
-      <input type="number" min="0" name="current" id="goalCurrent" placeholder="Current">
       <input type="date" name="deadline" id="goalDeadline" required>
       <div class="row">
         <button id="goalSubmit" class="btn btn--primary" type="submit">Add Goal</button>
@@ -51,7 +55,7 @@
     <div class="stack scroll" id="goalList"></div>
   </div>
   <div class="card card--categories">
-    <h2 class="card__title">Create Category</h2>
+    <h2 class="card__title">Category</h2>
     <form id="catForm" class="form form--3col">
       <input name="name" placeholder="Category name" required>
       <select name="type">
