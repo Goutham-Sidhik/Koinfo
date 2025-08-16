@@ -140,20 +140,22 @@ function computeRemainingThisMonth(data, cats){
     const d = new Date(t.date);
     return inPeriod(d, curStart, nextStart);
   });
-  const prevTxns = txns.filter(t => {
+  // All transactions strictly before the current cycle start = full carryover
+  const carryTxns = txns.filter(t => {
     const d = new Date(t.date);
-    return inPeriod(d, prevStart, curStart);
+    return d < curStart;
   });
   // Sums for a list
   const sumIncome  = list => list.filter(t=> typeOf(t.category_id)==='income' && !t.use_open_balance).reduce((a,t)=>a+Math.abs(+t.amount||0),0);
   // const sumOutflow = list => list.filter(t=> typeOf(t.category_id)!=='income' && !t.use_open_balance).reduce((a,t)=>a+Math.abs(+t.amount||0),0);
   const sumExpflow = list => list.filter(t=> typeOf(t.category_id)==='expense' && !t.use_open_balance).reduce((a,t)=>a+Math.abs(+t.amount||0),0);
   const sumSavflow = list => list.filter(t=> typeOf(t.category_id)==='saving' && !t.use_open_balance).reduce((a,t)=>a+Math.abs(+t.amount||0),0);
-  const incPrev = sumIncome(prevTxns);
-  const expPrev = sumExpflow(prevTxns);
-  const savPrev = sumSavflow(prevTxns);
+  const incCarry = sumIncome(carryTxns);
+  const expCarry = sumExpflow(carryTxns);
+  const savCarry = sumSavflow(carryTxns);
+  const prevRemaining = incCarry - (expCarry + savCarry);
   // const outPrev = sumOutflow(prevTxns);
-  const prevRemaining = incPrev - (expPrev + savPrev);
+  // const prevRemaining = incPrev - (expPrev + savPrev);
   const incCur = sumIncome(curTxns);
   // const outCur = sumOutflow(curTxns);
   const expCur = sumExpflow(curTxns);
@@ -203,24 +205,6 @@ function renderRemainingCard(data, cats, cycleStart, cycleEnd){
 
   // ----- MTD pace vs last month -----
   if (paceEl) {
-    // const today = new Date();
-    // const curDay = today.getDate();
-    // const curY = today.getFullYear(), curM = today.getMonth();
-    // const lastM = (curM + 11) % 12, lastY = curM === 0 ? curY - 1 : curY;
-
-    // const typeOf = (id)=> (cats.find(c=>c.id===id)||{}).type;
-    // const txns = data.transactions || [];
-
-    // const mtdSum = (y,m,day)=>{
-    //   return txns.filter(t=>{
-    //     const d = new Date(t.date);
-    //     return d.getFullYear()===y && d.getMonth()===m && d.getDate()<=day && typeOf(t.category_id)!=='income';
-    //   }).reduce((a,t)=> a + Math.abs(+t.amount||0), 0);
-    // };
-
-    // const curMTD  = mtdSum(curY,  curM,  curDay);
-    // const lastMTD = mtdSum(lastY, lastM, curDay);
-    // const diff    = curMTD - lastMTD;
 
       const today = new Date();
 
