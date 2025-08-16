@@ -109,9 +109,36 @@
       "note": "",
       "use_open_balance": false,
       "type": "income"
+    },
+    {
+      "id": "c4d65889-24ec-4d73-b337-d02e8e4d816c",
+      "date": "2025-08-01",
+      "category_id": "b16188b5-edf8-472a-bb78-1e14d313d16b",
+      "amount": 81000.0,
+      "note": "",
+      "use_open_balance": false,
+      "type": "income"
+    },
+    {
+      "id": "0bf8e4fd-3ca3-4f75-81f8-f5e263fc0b32",
+      "date": "2025-07-25",
+      "category_id": "9773faa7-2d91-445e-9a46-51ca550c4f8f",
+      "amount": 160000.0,
+      "note": "",
+      "use_open_balance": false,
+      "type": "saving"
+    },
+    {
+      "id": "894e2e9c-cc91-4834-b33c-669905488921",
+      "date": "2025-07-29",
+      "category_id": "81f99922-9931-41a8-aa76-02e6a1de52d0",
+      "amount": 1234.0,
+      "note": "",
+      "use_open_balance": false,
+      "type": "saving"
     }
   ],
   "debts": [],
   "goals": [],
-  "open_balance": 40000.0
+  "open_balance": 0.0
 }

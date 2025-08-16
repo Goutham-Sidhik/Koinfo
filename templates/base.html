@@ -5,28 +5,30 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='icon.png') }}">
-  <title>Budget Buddy</title>
+  <title>{{ title or "Kinfo" }}</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=2025-08-10-2">
+  <!-- Import Fredoka One from Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
   <div class="container">
     <header class="header">
       <div class="brand">
-        <img src="{{ url_for('static', filename='icon.png') }}" alt="Logo" style="height: 48px; vertical-align: middle; margin-right: 8px;">
-        {{ page_heading or "Finance Dashboard" }}
+        <img src="{{ url_for('static', filename='icon.png') }}" alt="Logo">
+        <span class="brand-text">{{ page_heading or "Koinfo" }}</span>
       </div>
       <nav class="nav">
-        <a
-          class="nav__link {% if title == 'Manage' %}nav__link--primary nav__link--glow{% endif %}"
+        <a 
+          class="nav__link {% if 'Manage' in title %}nav__link--primary nav__link--glow{% endif %}"
           href="{{ url_for('page_dashboard') }}"
         >Dashboard</a>
-        <a
-          class="nav__link {% if title == 'Dashboard' %}nav__link--primary nav__link--glow{% endif %}"
+        <a 
+          class="nav__link {% if 'Manage' not in title %}nav__link--primary nav__link--glow{% endif %}"
           href="{{ url_for('page_manage') }}"
         >Manage</a>
-        {% if title == 'Manage' %}
+        {% if 'Manage' in title %}
           <a 
             class="nav__link nav__link--primary nav__link--glow" 
             href="{{ url_for('download_json') }}" 
