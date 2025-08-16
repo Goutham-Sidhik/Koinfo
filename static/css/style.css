@@ -52,10 +52,23 @@ body {
     margin-bottom: 24px
 }
 
-.brand {
+.brand img {
+    height: 50px;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+.brand-text {
+    top: 12px;
+    position: relative;
+    font-size: 30px;
     font-weight: 800;
-    font-size: 28px;
-    text-shadow: 0 0 16px rgba(139, 92, 246, .6)
+    font-style: italic;
+    background: linear-gradient(135deg, #ff4bc2, #a64bf4, #00d4ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text; /* add for Firefox */
+    color: transparent; /*   add for Firefox */
 }
 
 .nav__link[title] {
@@ -355,6 +368,7 @@ body {
     box-shadow: 0 0 14px rgba(236, 72, 153, .8)
 }
 
+
 /* ---------- Alert pop‑ups ---------- */
 /* The container that holds all alert messages.  It’s positioned
    in the top‑right corner of the viewport so notifications
@@ -393,7 +407,7 @@ body {
 .alert--error {
     /* Use solid background for error alerts and white text */
     border-color: var(--bad);
-    height: 65px;
+    min-height: 65px;
     background: var(--bad);
     color: var(--fg);
 }
@@ -401,7 +415,7 @@ body {
 .alert--info {
     /* Use solid background for error alerts and white text */
     border-color: var(--ok);
-    height: 65px;
+    min-height: 65px;
     background: var(--ok);
     color: var(--fg);
 }
@@ -409,7 +423,7 @@ body {
 .alert--warn {
     /* Use solid background for warning alerts and white text */
     border-color: var(--warn);
-    height: 65px;
+    min-height: 65px;
     background: var(--warn);
     color: var(--fg);
 }
@@ -511,7 +525,7 @@ input[type="date"] {
 }
 
 .btn {
-    padding: 10px 14px;
+    padding: 6px 12px;
     border-radius: 12px;
     border: 1px solid var(--ring);
     cursor: pointer;

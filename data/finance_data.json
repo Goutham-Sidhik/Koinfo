@@ -77,9 +77,67 @@
       "name": "Investments",
       "type": "saving",
       "deleted": false
+    },
+    {
+      "id": "81f99922-9931-41a8-aa76-02e6a1de52d0",
+      "name": "Emergency Fund - Goal",
+      "type": "saving",
+      "deleted": false
+    },
+    {
+      "id": "1b194bc1-9944-4482-bd96-aaad8f6a48ff",
+      "name": "Transport",
+      "type": "expense",
+      "deleted": false
     }
   ],
-  "transactions": [],
+  "transactions": [
+    {
+      "id": "11c0b48c-2ab7-4ee6-8c90-92d0bc720eec",
+      "date": "2025-07-01",
+      "category_id": "b16188b5-edf8-472a-bb78-1e14d313d16b",
+      "amount": 81000.0,
+      "note": "",
+      "use_open_balance": false,
+      "type": "income"
+    },
+    {
+      "id": "739ec96d-8c7e-48c2-a2a6-b7fb9ee8a137",
+      "date": "2025-06-01",
+      "category_id": "b16188b5-edf8-472a-bb78-1e14d313d16b",
+      "amount": 81000.0,
+      "note": "",
+      "use_open_balance": false,
+      "type": "income"
+    },
+    {
+      "id": "c4d65889-24ec-4d73-b337-d02e8e4d816c",
+      "date": "2025-08-01",
+      "category_id": "b16188b5-edf8-472a-bb78-1e14d313d16b",
+      "amount": 81000.0,
+      "note": "",
+      "use_open_balance": false,
+      "type": "income"
+    },
+    {
+      "id": "0bf8e4fd-3ca3-4f75-81f8-f5e263fc0b32",
+      "date": "2025-07-25",
+      "category_id": "9773faa7-2d91-445e-9a46-51ca550c4f8f",
+      "amount": 160000.0,
+      "note": "",
+      "use_open_balance": false,
+      "type": "saving"
+    },
+    {
+      "id": "894e2e9c-cc91-4834-b33c-669905488921",
+      "date": "2025-07-29",
+      "category_id": "81f99922-9931-41a8-aa76-02e6a1de52d0",
+      "amount": 1234.0,
+      "note": "",
+      "use_open_balance": false,
+      "type": "saving"
+    }
+  ],
   "debts": [],
   "goals": [],
   "open_balance": 0.0

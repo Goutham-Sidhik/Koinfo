@@ -28,7 +28,7 @@
     if(type === 'error') alertEl.classList.add('alert--error');
     if(type === 'info') alertEl.classList.add('alert--info');
     if(type === 'warn' || type === 'warning') alertEl.classList.add('alert--warn');
-    alertEl.textContent = message;
+    alertEl.innerHTML = message;
     container.appendChild(alertEl);
     const ttl = typeof timeout === 'number' ? timeout : 5000;
     // Schedule fade out and removal

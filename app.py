@@ -67,26 +67,6 @@ def _unique_name_excluding(data, desired, exclude_id=None):
             return cand
         i += 1
 
-# def _next_unique_category_name(data, base, kind_label=None):
-#     """
-#     Keep for non-linked categories: if duplicate, prefer semantic suffix.
-#     (Used when users create categories directly.)
-#     """
-#     # Only consider active (not deleted) categories when generating a unique name.
-#     existing = {c.get("name", "").strip().casefold() for c in data.get("categories", []) if not c.get("deleted")}
-#     base_clean = (base or "").strip() or "Untitled"
-#     if base_clean.casefold() not in existing:
-#         return base_clean
-#     if kind_label:
-#         candidate = f"{base_clean} - {kind_label}"
-#         if candidate.casefold() not in existing:
-#             return candidate
-#     i = 2
-#     while True:
-#         cand = f"{base_clean} - {kind_label} {i}" if kind_label else f"{base_clean} ({i})"
-#         if cand.casefold() not in existing:
-#             return cand
-#         i += 1
 
 # --- Linked category helpers (ALWAYS show origin suffix) ---
 def _ensure_linked_category_for_debt(data, debt):
@@ -159,15 +139,17 @@ def _delete_linked_category(data, cat_id):
 # ---------------------- Pages ----------------------
 @app.get("/")
 def page_root():
-    return render_template("dashboard.html", title="Dashboard", main_class="main main--dashboard")
+    return render_template("dashboard.html", title="Koinfo", main_class="main main--dashboard")
 
 @app.get("/dashboard")
 def page_dashboard():
-    return render_template("dashboard.html", title="Dashboard", main_class="main main--dashboard")
+    return render_template("dashboard.html", title="Koinfo-Dashboard", main_class="main main--dashboard")
+    # return render_template("dashboard.html", title="Dashboard",  page_heading="KoinSight", main_class="main main--dashboard")
 
 @app.get("/manage")
 def page_manage():
-    return render_template("manage.html", title="Manage", page_heading="Finance Control Center", main_class="main main--manage")
+    return render_template("manage.html", title="Koinfo-Manage", main_class="main main--manage")
+    # return render_template("manage.html", title="Manage", page_heading="KoinStudio", main_class="main main--manage")
 
 # ---------------------- API ----------------------
 @app.get("/api/data")

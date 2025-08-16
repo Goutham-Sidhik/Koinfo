@@ -53,6 +53,98 @@ function daysBetween(a, b) {
   return Math.floor((d2 - d1) / (1000*60*60*24));
 }
 
+// ---------------- Cycle helpers ----------------
+/**
+ * Given a date and a cycle anchor day (1–31), return the start date of
+ * the budget cycle containing that date.  If the date falls on or after
+ * the anchor day, the cycle started this month; otherwise it started
+ * last month.  Hours are zeroed out on the returned date.
+ *
+ * @param {Date|String} date A date or ISO string
+ * @param {number} startDay The day of month when each cycle starts
+ * @returns {Date} Start of the cycle (00:00:00 time)
+ */
+function getCycleStartForDate(date, startDay){
+  const d = new Date(date);
+  if(Number.isNaN(d.getTime())) return new Date();
+  d.setHours(0,0,0,0);
+  const day = Math.max(1, Math.min(31, parseInt(startDay||1)));
+  let y = d.getFullYear();
+  let m = d.getMonth();
+  if(d.getDate() >= day){
+    // cycle begins this month
+    return new Date(y, m, day);
+  }
+  // cycle begins last month
+  m -= 1;
+  if(m < 0){ m = 11; y -= 1; }
+  return new Date(y, m, day);
+}
+
+/**
+ * Compute remaining budget for a specified cycle.  This uses the
+ * same logic as computeRemainingThisMonth but accepts an arbitrary
+ * cycle start date and the cycle anchor day.  It excludes
+ * transactions flagged with use_open_balance when aggregating
+ * income/expense/saving flows.
+ *
+ * @param {Object} data The full data model
+ * @param {Array} cats Category list
+ * @param {Date} cycleStart Start date of the cycle (inclusive)
+ * @param {number} startDay Day of month when cycles begin
+ * @returns {Object} {inc: number, exp: number, sav: number, remaining: number}
+ */
+function computeRemainingForCycle(data, cats, cycleStart, startDay){
+  const txns = data.transactions || [];
+  // Next period start (one month after cycleStart)
+  const nextStart = new Date(cycleStart.getFullYear(), cycleStart.getMonth() + 1, cycleStart.getDate());
+  // Helper to test if date in [start, end)
+  const inPeriod = (d, start, end) => d >= start && d < end;
+  // Determine category type
+  const typeOf = (id)=> (cats.find(c=>c.id===id)||{}).type;
+  // Split transactions into carryover (before cycleStart) and current period
+  const carryTxns = txns.filter(t => {
+    const d = new Date(t.date);
+    return d < cycleStart;
+  });
+  const curTxns = txns.filter(t => {
+    const d = new Date(t.date);
+    return inPeriod(d, cycleStart, nextStart);
+  });
+  // Aggregators (excluding use_open_balance)
+  const sumIncome  = list => list.filter(t=> typeOf(t.category_id)==='income' && !t.use_open_balance).reduce((a,t)=>a+Math.abs(+t.amount||0),0);
+  const sumExpflow = list => list.filter(t=> typeOf(t.category_id)==='expense' && !t.use_open_balance).reduce((a,t)=>a+Math.abs(+t.amount||0),0);
+  const sumSavflow = list => list.filter(t=> typeOf(t.category_id)==='saving' && !t.use_open_balance).reduce((a,t)=>a+Math.abs(+t.amount||0),0);
+  const incCarry = sumIncome(carryTxns);
+  const expCarry = sumExpflow(carryTxns);
+  const savCarry = sumSavflow(carryTxns);
+  const prevRemaining = incCarry - (expCarry + savCarry);
+  const incCur = sumIncome(curTxns);
+  const expCur = sumExpflow(curTxns);
+  const savCur = sumSavflow(curTxns);
+  const remaining = prevRemaining + (incCur - (expCur + savCur));
+  return { inc: incCur, exp: expCur, sav: savCur, remaining };
+}
+
+/**
+ * Format a cycle start date into a human‑friendly range string like
+ * "01 Jan to 31 Jan".  Computes the end of the cycle as the day
+ * before the same anchor day in the next month.  Handles months with
+ * varying lengths.
+ *
+ * @param {Date} cycleStart Start of the cycle
+ * @returns {string} Formatted range (e.g. "01 Jan to 28 Feb")
+ */
+function formatCycleRange(cycleStart){
+  const start = new Date(cycleStart);
+  start.setHours(0,0,0,0);
+  const nextStart = new Date(start.getFullYear(), start.getMonth() + 1, start.getDate());
+  const endDate = new Date(nextStart);
+  endDate.setDate(endDate.getDate() - 1);
+  const fmt = d => d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short'});
+  return `${fmt(start)} to ${fmt(endDate)}`;
+}
+
 
 // Returns { label: "15d left" | "Due today" | "Overdue 3d", color: cssColor, done: true || false}.
 // If goal reached/exceeded, returns "Completed in Xd" (green) and sets done=true.
@@ -140,20 +232,22 @@ function computeRemainingThisMonth(data, cats){
     const d = new Date(t.date);
     return inPeriod(d, curStart, nextStart);
   });
-  const prevTxns = txns.filter(t => {
+  // All transactions strictly before the current cycle start = full carryover
+  const carryTxns = txns.filter(t => {
     const d = new Date(t.date);
-    return inPeriod(d, prevStart, curStart);
+    return d < curStart;
   });
   // Sums for a list
   const sumIncome  = list => list.filter(t=> typeOf(t.category_id)==='income' && !t.use_open_balance).reduce((a,t)=>a+Math.abs(+t.amount||0),0);
   // const sumOutflow = list => list.filter(t=> typeOf(t.category_id)!=='income' && !t.use_open_balance).reduce((a,t)=>a+Math.abs(+t.amount||0),0);
   const sumExpflow = list => list.filter(t=> typeOf(t.category_id)==='expense' && !t.use_open_balance).reduce((a,t)=>a+Math.abs(+t.amount||0),0);
   const sumSavflow = list => list.filter(t=> typeOf(t.category_id)==='saving' && !t.use_open_balance).reduce((a,t)=>a+Math.abs(+t.amount||0),0);
-  const incPrev = sumIncome(prevTxns);
-  const expPrev = sumExpflow(prevTxns);
-  const savPrev = sumSavflow(prevTxns);
+  const incCarry = sumIncome(carryTxns);
+  const expCarry = sumExpflow(carryTxns);
+  const savCarry = sumSavflow(carryTxns);
+  const prevRemaining = incCarry - (expCarry + savCarry);
   // const outPrev = sumOutflow(prevTxns);
-  const prevRemaining = incPrev - (expPrev + savPrev);
+  // const prevRemaining = incPrev - (expPrev + savPrev);
   const incCur = sumIncome(curTxns);
   // const outCur = sumOutflow(curTxns);
   const expCur = sumExpflow(curTxns);
@@ -203,24 +297,6 @@ function renderRemainingCard(data, cats, cycleStart, cycleEnd){
 
   // ----- MTD pace vs last month -----
   if (paceEl) {
-    // const today = new Date();
-    // const curDay = today.getDate();
-    // const curY = today.getFullYear(), curM = today.getMonth();
-    // const lastM = (curM + 11) % 12, lastY = curM === 0 ? curY - 1 : curY;
-
-    // const typeOf = (id)=> (cats.find(c=>c.id===id)||{}).type;
-    // const txns = data.transactions || [];
-
-    // const mtdSum = (y,m,day)=>{
-    //   return txns.filter(t=>{
-    //     const d = new Date(t.date);
-    //     return d.getFullYear()===y && d.getMonth()===m && d.getDate()<=day && typeOf(t.category_id)!=='income';
-    //   }).reduce((a,t)=> a + Math.abs(+t.amount||0), 0);
-    // };
-
-    // const curMTD  = mtdSum(curY,  curM,  curDay);
-    // const lastMTD = mtdSum(lastY, lastM, curDay);
-    // const diff    = curMTD - lastMTD;
 
       const today = new Date();
 
@@ -670,32 +746,99 @@ document.getElementById('txnForm')?.addEventListener('submit', async (e)=>{
   const data = await getData();
   const cats = data.categories || [];
 
-  // ----- Check against remaining budget for this period -----
+  // ----- Cycle awareness and remaining checks -----
   // Determine the category type
   const catObj = cats.find(c => c.id === selCat) || {};
   const catType = catObj.type || 'expense';
-  // Compute the current remaining amount (includes carry‑forward)
-  const { remaining: budgetRemaining } = computeRemainingThisMonth(data, cats);
-  // Include the opening balance when determining available funds for
-  // outflow.  Opening balance should augment the budget.
-  const budgetRemainingIncludingOpen = useOpenBal
-  ? budgetRemaining + parseFloat(data.open_balance || 0)
-  : budgetRemaining;
+  // Parse the selected date and compute the cycle start for that date
+  const txnDateObj = new Date(payload.date);
+  txnDateObj.setHours(0,0,0,0);
+  const startDay = Math.max(1, Math.min(31, parseInt(window._cycleStartDay || 1)));
+  const currentCycleStart = getCycleStartForDate(new Date(), startDay);
+  const selectedCycleStart = getCycleStartForDate(txnDateObj, startDay);
+
+  // Block entries into future cycles
+  if(selectedCycleStart > currentCycleStart){
+    const range = formatCycleRange(selectedCycleStart);
+    showAlert(`Change the date or save later.<br>(Entry in Cycle: ${range})</p>`, 'error');
+    return;
+  }
+
+  // Compute remaining for the appropriate cycle.  For past cycles, we
+  // evaluate the cycle containing the selected date.  For the
+  // current cycle, we use computeRemainingThisMonth which already
+  // incorporates carry‑over.  All calculations exclude use_open_balance
+  // transactions by design.
+  let cycleRemaining;
+  if(selectedCycleStart < currentCycleStart){
+    const { remaining: prevRem } = computeRemainingForCycle(data, cats, selectedCycleStart, startDay);
+    cycleRemaining = prevRem;
+  } else {
+    const { remaining: currRem } = computeRemainingThisMonth(data, cats);
+    cycleRemaining = currRem;
+  }
+
+  // Compute the difference (delta) that will impact the outflow for this
+  // entry.  Incomes always increase remaining and are allowed, so we
+  // only check expenses and savings.  When editing, if the date and
+  // category remain within the same cycle and category, only the
+  // additional amount (if any) is considered.  Otherwise the full
+  // amount is evaluated.  We intentionally ignore the removal of the
+  // old transaction from its original cycle to keep the check
+  // straightforward.
   let deltaOut = 0;
-  if (catType !== 'income') {
-    if (editing && oldCat === selCat) {
-      // Additional spend beyond original amount
-      deltaOut = amt - oldAmt;
-      if (deltaOut < 0) deltaOut = 0;
+  if(catType !== 'income'){
+    if(editing){
+      // Determine the cycle of the original transaction
+      let oldCycleStart = null;
+      if(window._editingTxn){
+        const oldDateObj = new Date(document.getElementById('txnDate').value);
+        // Use the originally stored date on the editingTxn if available
+        if(window._editingTxn.id === id){
+          // find the transaction from data.transactions to get its original date
+          const orig = (data.transactions || []).find(tx => tx.id === window._editingTxn.id);
+          if(orig){
+            const od = new Date(orig.date);
+            od.setHours(0,0,0,0);
+            oldCycleStart = getCycleStartForDate(od, startDay);
+          }
+        }
+      }
+      if(oldCycleStart && oldCycleStart.getTime() === selectedCycleStart.getTime() && oldCat === selCat){
+        // Same cycle and same category: only additional amount counts
+        deltaOut = amt - oldAmt;
+        if(deltaOut < 0) deltaOut = 0;
+      } else {
+        // Different cycle or category: treat full amount as new outflow
+        deltaOut = amt;
+      }
     } else {
-      // New transaction or changed category to non‑income
+      // New transaction
       deltaOut = amt;
     }
   }
-  if(deltaOut > budgetRemainingIncludingOpen){
-    showAlert('Exceeds Available Amount', 'error');
-    return;
+
+  // Determine available funds.  For current cycle, include opening
+  // balance when the user opts to use it; for past cycles, the
+  // opening balance is not considered.  Income transactions skip
+  // this check entirely.
+  if(catType !== 'income'){
+    let available = cycleRemaining;
+    if(selectedCycleStart.getTime() === currentCycleStart.getTime() && useOpenBal){
+      // Opening balance augments only current cycle
+      available += parseFloat(data.open_balance || 0);
+    }
+    if(deltaOut > available){
+      const range = formatCycleRange(selectedCycleStart);
+      showAlert(`<p>Exceeds Available Amount<br>(Entry Cycle: ${range})</p>`, 'error');
+      return;
+    }
   }
+
+  // For past cycles, we ignore the opening balance checkbox.  The
+  // body.use_open_balance flag is determined separately above and
+  // applies only to current cycle transactions.  No need to modify
+  // the payload form entries here.
 
   // ----- Goal logic: soft‑cap warning when deposit exceeds the goal target -----
   if(window._goalCatIds && window._goalCatIds.has(selCat)){
@@ -739,7 +882,10 @@ document.getElementById('txnForm')?.addEventListener('submit', async (e)=>{
     }
   }
 
-  const body = {date: payload.date, amount: amt, category_id: selCat, note: payload.note, use_open_balance: !!useOpenBal};
+  // Determine whether this transaction should actually draw from the
+  // opening balance.  It is permitted only in the current cycle.
+  const finalUseOB = (selectedCycleStart.getTime() === currentCycleStart.getTime()) && !!useOpenBal;
+  const body = {date: payload.date, amount: amt, category_id: selCat, note: payload.note, use_open_balance: finalUseOB};
 
   if(id){
     await fetch(`/api/transaction/${id}`, {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
@@ -851,6 +997,35 @@ document.getElementById('goalCancelEdit')?.addEventListener('click', ()=>{
 
 // Initial render
 refresh();
+
+// ----- Date change handler for transaction form -----
+// Disable the opening balance checkbox for transactions dated before
+// the current cycle.  Opening balance can only be applied in the
+// present cycle.  When editing an existing transaction, the
+// checkbox remains disabled (handled in edit handler).
+(function(){
+  const dateInput = document.getElementById('txnDate');
+  const openChk   = document.getElementById('txnUseOpenBal');
+  if(dateInput && openChk){
+    dateInput.addEventListener('change', () => {
+      const startDay = Math.max(1, Math.min(31, parseInt(window._cycleStartDay || 1)));
+      const d = new Date(dateInput.value);
+      d.setHours(0,0,0,0);
+      const currentStart = getCycleStartForDate(new Date(), startDay);
+      const selectedStart = getCycleStartForDate(d, startDay);
+      if(selectedStart < currentStart){
+        // Past cycle: force off and disable
+        openChk.checked = false;
+        openChk.disabled = true;
+      } else {
+        // Current or future cycle: enable if not editing
+        if(!window._editingTxn){
+          openChk.disabled = false;
+        }
+      }
+    });
+  }
+})();
 
 // ---------- Budget start day setup ----------
 
