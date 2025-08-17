@@ -18,6 +18,92 @@
     --sav: #00e1ffff;
 }
 
+/* ----- Toggle switch for Show All transactions ----- */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--card2);
+    border: 1px solid var(--ring);
+    transition: .3s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: var(--muted);
+    border-radius: 50%;
+    transition: .3s;
+}
+
+.switch input:checked + .slider {
+    background: var(--edit);
+    border-color: transparent;
+}
+
+.switch input:checked + .slider:before {
+    transform: translateX(20px);
+    background-color: #fff;
+}
+
+/* Rounded slider */
+.slider.round {
+    border-radius: 34px;
+}
+.slider.round:before {
+    border-radius: 50%;
+}
+
+/* ----- Styled select for transaction filters ----- */
+.txn-filter-select {
+    /* appearance: none;
+    -moz-appearance: none;
+    -webkit-appearance: none; */
+    padding: 6px 10px;
+    background: var(--card2);
+    border: 1px solid var(--ring);
+    border-radius: 8px;
+    font-size: 12px;
+    color: var(--fg);
+    min-height: 30px;
+}
+.txn-filter-select:focus {
+    outline: none;
+    box-shadow: 0 0 0 1px var(--accent3);
+}
+
+/* Option styles within the custom select. Note: styling options is limited across browsers. */
+.txn-filter-select option {
+    background: var(--bg);
+    color: var(--fg);
+}
+
+/* ----- Transaction form flags row tweaks ----- */
+.form--2col .txn-flags-actions {
+    grid-column: 1 / -1;
+}
+
 * {
     box-sizing: border-box;
     font-family: 'Brush Script MT', cursive;
@@ -131,6 +217,7 @@ body {
 
 .nav__link--primary:hover {
     filter: brightness(1.06);
+    background: linear-gradient(90deg, var(--accent2), var(--accent3));
     transform: translateY(-1px);
     box-shadow: 0 10px 26px rgba(236, 72, 153, .35);
 }

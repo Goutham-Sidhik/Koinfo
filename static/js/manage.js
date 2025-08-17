@@ -112,9 +112,28 @@ function computeRemainingForCycle(data, cats, cycleStart, startDay){
     return inPeriod(d, cycleStart, nextStart);
   });
   // Aggregators (excluding use_open_balance)
-  const sumIncome  = list => list.filter(t=> typeOf(t.category_id)==='income' && !t.use_open_balance).reduce((a,t)=>a+Math.abs(+t.amount||0),0);
-  const sumExpflow = list => list.filter(t=> typeOf(t.category_id)==='expense' && !t.use_open_balance).reduce((a,t)=>a+Math.abs(+t.amount||0),0);
-  const sumSavflow = list => list.filter(t=> typeOf(t.category_id)==='saving' && !t.use_open_balance).reduce((a,t)=>a+Math.abs(+t.amount||0),0);
+  // Classification helpers: treat goal withdrawals as income and debt claims as expense
+  const sumIncome  = list => list.filter(t => {
+    if (t.use_open_balance) return false;
+    // goal withdrawals are income regardless of category type
+    if (t.goal_withdrawal) return true;
+    const type = typeOf(t.category_id);
+    return type === 'income' && !t.debt_claim;
+  }).reduce((a,t)=>a+Math.abs(+t.amount||0),0);
+  const sumExpflow = list => list.filter(t => {
+    if (t.use_open_balance) return false;
+    // debt claims count as expense regardless of category type
+    if (t.debt_claim) return true;
+    const type = typeOf(t.category_id);
+    return type === 'expense';
+  }).reduce((a,t)=>a+Math.abs(+t.amount||0),0);
+  const sumSavflow = list => list.filter(t => {
+    if (t.use_open_balance) return false;
+    // Skip withdrawals as saving (withdrawals shouldn't be counted as saving outflow)
+    if (t.goal_withdrawal) return false;
+    const type = typeOf(t.category_id);
+    return type === 'saving';
+  }).reduce((a,t)=>a+Math.abs(+t.amount||0),0);
   const incCarry = sumIncome(carryTxns);
   const expCarry = sumExpflow(carryTxns);
   const savCarry = sumSavflow(carryTxns);
@@ -125,6 +144,20 @@ function computeRemainingForCycle(data, cats, cycleStart, startDay){
   const remaining = prevRemaining + (incCur - (expCur + savCur));
   return { inc: incCur, exp: expCur, sav: savCur, remaining };
 }
+
+function toggleHistoryLabel() {
+  const card = document.querySelector(".card--transactions"); // scope to this card
+  const toggle = card.querySelector("#txnShowAll");
+  const cycleSpan = card.querySelector(".card__title span");
+
+  cycleSpan.textContent = toggle.checked ? "(Full History)" : "(Cycle History)";
+}
+
+const txnToggle = document.querySelector(".card--transactions #txnShowAll");
+txnToggle.addEventListener("change", toggleHistoryLabel);
+
+// run once on load so it matches initial state
+toggleHistoryLabel();
 
 /**
  * Format a cycle start date into a human‑friendly range string like
@@ -238,10 +271,26 @@ function computeRemainingThisMonth(data, cats){
     return d < curStart;
   });
   // Sums for a list
-  const sumIncome  = list => list.filter(t=> typeOf(t.category_id)==='income' && !t.use_open_balance).reduce((a,t)=>a+Math.abs(+t.amount||0),0);
+  // Classification helpers: treat goal withdrawals as income and debt claims as expense
+  const sumIncome  = list => list.filter(t => {
+    if (t.use_open_balance) return false;
+    if (t.goal_withdrawal) return true;
+    const type = typeOf(t.category_id);
+    return type === 'income' && !t.debt_claim;
+  }).reduce((a,t)=>a+Math.abs(+t.amount||0),0);
   // const sumOutflow = list => list.filter(t=> typeOf(t.category_id)!=='income' && !t.use_open_balance).reduce((a,t)=>a+Math.abs(+t.amount||0),0);
-  const sumExpflow = list => list.filter(t=> typeOf(t.category_id)==='expense' && !t.use_open_balance).reduce((a,t)=>a+Math.abs(+t.amount||0),0);
-  const sumSavflow = list => list.filter(t=> typeOf(t.category_id)==='saving' && !t.use_open_balance).reduce((a,t)=>a+Math.abs(+t.amount||0),0);
+  const sumExpflow = list => list.filter(t => {
+    if (t.use_open_balance) return false;
+    if (t.debt_claim) return true;
+    const type = typeOf(t.category_id);
+    return type === 'expense';
+  }).reduce((a,t)=>a+Math.abs(+t.amount||0),0);
+  const sumSavflow = list => list.filter(t => {
+    if (t.use_open_balance) return false;
+    if (t.goal_withdrawal) return false;
+    const type = typeOf(t.category_id);
+    return type === 'saving';
+  }).reduce((a,t)=>a+Math.abs(+t.amount||0),0);
   const incCarry = sumIncome(carryTxns);
   const expCarry = sumExpflow(carryTxns);
   const savCarry = sumSavflow(carryTxns);
@@ -376,9 +425,16 @@ async function refresh(){
   // Derive a list of active (non-deleted) categories for form selections.
   const activeCats = cats.filter(c => !c.deleted);
 
-  // Expose link maps for UI logic (goal/ debt categories)
+  // Expose link maps for UI logic (goal/debt categories)
   window._goalCatIds = new Set((data.goals||[]).map(g=>g.linked_category_id).filter(Boolean));
   window._debtCatIds = new Set((data.debts||[]).map(d=>d.linked_category_id).filter(Boolean));
+  // Map linked debt category id to its kind (payable/receivable) to determine claim behavior
+  window._debtInfoMap = {};
+  (data.debts || []).forEach(d => {
+    if(d.linked_category_id){
+      window._debtInfoMap[d.linked_category_id] = d.kind || 'payable';
+    }
+  });
 
   // Populate category select (transactions form) using only active categories
   const txnCat = document.getElementById('txnCategory');
@@ -392,6 +448,33 @@ async function refresh(){
   }
   
   document.getElementById('txnCategory').dispatchEvent(new Event('change'));
+
+  // ----- Populate transaction filter dropdowns -----
+  // Category filter: include active categories and deleted categories that have at least one transaction. Deleted categories with no transactions are omitted.
+  const filterCatSelect = document.getElementById('txnFilterCat');
+  if(filterCatSelect){
+    const prevVal = window._filterCat || '';
+    // Build a set of category IDs that appear in transactions
+    const usedCatIds = new Set();
+    (data.transactions || []).forEach(t => {
+      if(t.category_id){
+        usedCatIds.add(t.category_id);
+      }
+    });
+    const allCats = (data.categories || []).slice().sort((a,b) =>
+      a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' })
+    );
+    const opts = [`<option value="">All Categories</option>`];
+    allCats.forEach(c => {
+      // Skip deleted categories that have no transactions referencing them
+      if(c.deleted && !usedCatIds.has(c.id)) return;
+      let label = c.name;
+      if(c.deleted) label += ' (deleted)';
+      opts.push(`<option value="${c.id}">${label}</option>`);
+    });
+    filterCatSelect.innerHTML = opts.join('');
+    filterCatSelect.value = prevVal;
+  }
 
   // ----- Categories list (block delete for linked ones) -----
   const catList = document.getElementById('catList');
@@ -620,26 +703,40 @@ async function refresh(){
   // ----- Transactions list (current cycle) -----
   // Compute the start and end of the current budget cycle based on
   // Filter transactions within [cycleStart, cycleEnd)
-  const txns = [...(data.transactions || [])]
-    .filter(t => {
+  // Build transaction list with cycle and filter logic
+  let txns = (data.transactions || []).slice();
+  // Filter by cycle if show-all is not checked
+  if(!window._showAllTxns){
+    txns = txns.filter(t => {
       const d = new Date(t.date);
       return d >= cycleStart && d < cycleEnd;
-    })
-    .sort((a, b) => {
-      // 1) date desc (by day, ignoring time)
-      const dd = new Date(b.date) - new Date(a.date);
-      if (dd !== 0) return dd;
-
-      // 2) alphanumeric by name/description (A2 before A10)
-      const aKey = (a.name ?? a.description ?? '').toString();
-      const bKey = (b.name ?? b.description ?? '').toString();
-      const cmp = aKey.localeCompare(bKey, undefined, { numeric: true, sensitivity: 'base' });
-      if (cmp !== 0) return cmp;
-
-      // 3) stable fallback
-      return (a.id ?? 0) - (b.id ?? 0);
     });
-    // .sort((a,b) => new Date(b.date) - new Date(a.date));
+  }
+  // Filter by category type.  For debt claims treat as expense, goal withdrawals as income.
+  if(window._filterType){
+    const desired = window._filterType;
+    txns = txns.filter(t => {
+      const cat = cats.find(c => c.id === t.category_id);
+      let actualType = cat ? cat.type : '';
+      if(t.goal_withdrawal) actualType = 'income';
+      else if(t.debt_claim) actualType = 'expense';
+      return actualType === desired;
+    });
+  }
+  // Filter by category id
+  if(window._filterCat){
+    txns = txns.filter(t => t.category_id === window._filterCat);
+  }
+  // Sort transactions: date desc, then name/description, then id
+  txns = txns.sort((a, b) => {
+    const dd = new Date(b.date) - new Date(a.date);
+    if(dd !== 0) return dd;
+    const aKey = (a.name ?? a.description ?? '').toString();
+    const bKey = (b.name ?? b.description ?? '').toString();
+    const cmp = aKey.localeCompare(bKey, undefined, { numeric: true, sensitivity: 'base' });
+    if(cmp !== 0) return cmp;
+    return (a.id ?? 0) - (b.id ?? 0);
+  });
 
   const txnList = document.getElementById('txnList');
   if (txnList) {
@@ -664,11 +761,29 @@ async function refresh(){
               openChk.checked = !!t.use_open_balance;
               openChk.disabled = true;
             }
+            // Set claim and withdraw checkboxes based on existing flags and disable them during edit
+            const claimChk = document.getElementById('txnDebtClaim');
+            if(claimChk){
+              claimChk.checked = !!t.debt_claim;
+              claimChk.disabled = true;
+            }
+            const withChk = document.getElementById('txnGoalWithdraw');
+            if(withChk){
+              withChk.checked = !!t.goal_withdrawal;
+              withChk.disabled = true;
+            }
             document.getElementById('txnSubmit').textContent = 'Save';
             document.getElementById('txnCancelEdit').style.display = '';
             document.getElementById('txnCategory').dispatchEvent(new Event('change'));
             // Store original transaction details for validation during update
-            window._editingTxn = { id: t.id, amount: Number(t.amount), category_id: t.category_id, use_open_balance: !!t.use_open_balance };
+            window._editingTxn = { 
+              id: t.id, 
+              amount: Number(t.amount), 
+              category_id: t.category_id, 
+              use_open_balance: !!t.use_open_balance,
+              debt_claim: !!t.debt_claim,
+              goal_withdrawal: !!t.goal_withdrawal
+            };
           });
           const xBtn = document.getElementById(delId);
           if(xBtn) xBtn.addEventListener('click', async()=>{
@@ -683,11 +798,26 @@ async function refresh(){
       },0);
 
       // Determine display values
-      const txnColor = cat && {income:'var(--inc)', expense:'var(--exp)', saving:'var(--sav)'}[cat.type] || 'var(--muted)';
+      // Determine base color by category type (income = green, expense = red, saving = cyan).  If the transaction is marked
+      // as a debt claim or a goal withdrawal, override the color to the expense color to visually indicate an outflow.
+      let txnColor;
+      if(t.debt_claim || t.goal_withdrawal){
+        txnColor = 'var(--exp)';
+      } else {
+        txnColor = cat && {income:'var(--inc)', expense:'var(--exp)', saving:'var(--sav)'}[cat.type] || 'var(--muted)';
+      }
       const amountText = `<span style="color:${txnColor}">${formatINR(Math.abs(+t.amount || 0))}</span>`;
-      const pillOB = t.use_open_balance ? 'openBal' : '';
       const nameText = cat ? cat.name : 'Unknown';
-      const firstLine = pillOB === 'openBal' ? `<strong>${nameText}</strong> <span style="margin-left:20px;">${pill(pillOB)}</span? <br>` : `<strong>${nameText}</strong>`;
+      // Build pill list for flags
+      const pills = [];
+      if(t.use_open_balance) pills.push('openBal');
+      if(t.debt_claim) pills.push('claim');
+      if(t.goal_withdrawal) pills.push('withdraw');
+      let pillHtml = '';
+      if(pills.length > 0){
+        pillHtml = pills.map(pl => `<span style="margin-left:12px;">${pill(pl)}</span>`).join('');
+      }
+      const firstLine = `<strong>${nameText}</strong>${pillHtml}`;
       const left = `
         ${firstLine}
         <div style="color:#cdd0e0;font-size:12px;margin-top:12px">${t.date} • ${amountText}</div>
@@ -736,6 +866,8 @@ document.getElementById('txnForm')?.addEventListener('submit', async (e)=>{
   const selCat = payload.category_id;
   // Capture whether this transaction should draw from the opening balance.
   const useOpenBal = document.getElementById('txnUseOpenBal')?.checked;
+  const flagClaim = document.getElementById('txnDebtClaim')?.checked;
+  const flagWithdraw = document.getElementById('txnGoalWithdraw')?.checked;
 
   // Determine if editing an existing transaction and capture its original amount and category
   const editing = id && window._editingTxn && window._editingTxn.id === id;
@@ -760,7 +892,7 @@ document.getElementById('txnForm')?.addEventListener('submit', async (e)=>{
   // Block entries into future cycles
   if(selectedCycleStart > currentCycleStart){
     const range = formatCycleRange(selectedCycleStart);
-    showAlert(`Change the date or save later.<br>(Entry in Cycle: ${range})</p>`, 'error');
+    showAlert(`Entry Date is in the next cycle ${range}. Change the date or save later.`, 'error');
     return;
   }
 
@@ -778,51 +910,48 @@ document.getElementById('txnForm')?.addEventListener('submit', async (e)=>{
     cycleRemaining = currRem;
   }
 
-  // Compute the difference (delta) that will impact the outflow for this
-  // entry.  Incomes always increase remaining and are allowed, so we
-  // only check expenses and savings.  When editing, if the date and
-  // category remain within the same cycle and category, only the
-  // additional amount (if any) is considered.  Otherwise the full
-  // amount is evaluated.  We intentionally ignore the removal of the
-  // old transaction from its original cycle to keep the check
-  // straightforward.
+  // Helper to determine if a transaction should reduce remaining (outflow)
+  const isOutflow = (ctype, claim, withdraw) => {
+    if(withdraw) return false;
+    if(claim) return true;
+    return ctype !== 'income';
+  };
+
+  // Compute the difference (delta) that will impact the outflow for this entry.
   let deltaOut = 0;
-  if(catType !== 'income'){
-    if(editing){
-      // Determine the cycle of the original transaction
-      let oldCycleStart = null;
-      if(window._editingTxn){
-        const oldDateObj = new Date(document.getElementById('txnDate').value);
-        // Use the originally stored date on the editingTxn if available
-        if(window._editingTxn.id === id){
-          // find the transaction from data.transactions to get its original date
-          const orig = (data.transactions || []).find(tx => tx.id === window._editingTxn.id);
-          if(orig){
-            const od = new Date(orig.date);
-            od.setHours(0,0,0,0);
-            oldCycleStart = getCycleStartForDate(od, startDay);
-          }
-        }
+  const newOutflow = isOutflow(catType, flagClaim, flagWithdraw) ? amt : 0;
+  if(editing){
+    // Determine flags of original transaction
+    const oldClaim = !!window._editingTxn.debt_claim;
+    const oldWithdraw = !!window._editingTxn.goal_withdrawal;
+    const oldCatType = (cats.find(c => c.id === oldCat) || {}).type || 'expense';
+    const oldOutflow = isOutflow(oldCatType, oldClaim, oldWithdraw) ? oldAmt : 0;
+    // Determine the cycle of the original transaction
+    let oldCycleStart = null;
+    if(window._editingTxn){
+      const orig = (data.transactions || []).find(tx => tx.id === window._editingTxn.id);
+      if(orig){
+        const od = new Date(orig.date);
+        od.setHours(0,0,0,0);
+        oldCycleStart = getCycleStartForDate(od, startDay);
       }
-      if(oldCycleStart && oldCycleStart.getTime() === selectedCycleStart.getTime() && oldCat === selCat){
-        // Same cycle and same category: only additional amount counts
-        deltaOut = amt - oldAmt;
-        if(deltaOut < 0) deltaOut = 0;
-      } else {
-        // Different cycle or category: treat full amount as new outflow
-        deltaOut = amt;
-      }
-    } else {
-      // New transaction
-      deltaOut = amt;
     }
+    if(oldCycleStart && oldCycleStart.getTime() === selectedCycleStart.getTime() && oldCat === selCat && oldClaim === flagClaim && oldWithdraw === flagWithdraw){
+      // Same cycle, category and flags: only additional outflow counts
+      deltaOut = newOutflow - oldOutflow;
+      if(deltaOut < 0) deltaOut = 0;
+    } else {
+      // Otherwise treat full new outflow
+      deltaOut = newOutflow;
+    }
+  } else {
+    // New transaction
+    deltaOut = newOutflow;
   }
 
-  // Determine available funds.  For current cycle, include opening
-  // balance when the user opts to use it; for past cycles, the
-  // opening balance is not considered.  Income transactions skip
-  // this check entirely.
-  if(catType !== 'income'){
+  // Determine available funds.  For current cycle, include opening balance when applicable.
+  // Skip this check for income-type entries and for goal withdrawals (which act like income).
+  if(isOutflow(catType, flagClaim, flagWithdraw)){
     let available = cycleRemaining;
     if(selectedCycleStart.getTime() === currentCycleStart.getTime() && useOpenBal){
       // Opening balance augments only current cycle
@@ -846,19 +975,37 @@ document.getElementById('txnForm')?.addEventListener('submit', async (e)=>{
     if(goal){
       const cur = parseFloat(goal.current || 0);
       const tgt = parseFloat(goal.target || 0);
-      let projected;
-      if(editing && oldCat === selCat){
-        const delta = amt - oldAmt;
-        projected = cur + delta;
+      // For withdrawals, ensure not to withdraw more than current
+      if(flagWithdraw){
+        // Determine how much is being withdrawn relative to old transaction if editing
+        let withdrawAmt;
+        if(editing && oldCat === selCat && !!window._editingTxn.goal_withdrawal === flagWithdraw){
+          // editing same category and same flag: only difference matters
+          const delta = amt - oldAmt;
+          withdrawAmt = delta > 0 ? delta : 0;
+        } else {
+          withdrawAmt = amt;
+        }
+        if(withdrawAmt > cur){
+          showAlert('Withdrawal exceeds saved amount', 'error');
+          return;
+        }
       } else {
-        projected = cur + amt;
-      }
-      if(tgt > 0 && projected > tgt){
-        const over = projected - tgt;
-        showAlert(`Goal Exceeded by ${formatINR(over)}.`, 'warn');
-      }
-      if(tgt > 0 && projected == tgt){
-        showAlert(`Hurray: Goal Reached.`, 'info');
+        // Deposit logic: warn if exceeding target
+        let projected;
+        if(editing && oldCat === selCat){
+          const delta = amt - oldAmt;
+          projected = cur + delta;
+        } else {
+          projected = cur + amt;
+        }
+        if(tgt > 0 && projected > tgt){
+          const over = projected - tgt;
+          showAlert(`Goal Exceeded by ${formatINR(over)}.`, 'warn');
+        }
+        if(tgt > 0 && projected == tgt){
+          showAlert(`Hurray: Goal Reached.`, 'info');
+        }
       }
     }
   }
@@ -868,16 +1015,21 @@ document.getElementById('txnForm')?.addEventListener('submit', async (e)=>{
     const debt = (data.debts||[]).find(d=>d.linked_category_id===selCat);
     if(debt){
       const balance = parseFloat(debt.balance || 0);
-      let exceeds;
-      if(editing && oldCat === selCat){
-        const delta = amt - oldAmt;
-        exceeds = delta > balance;
+      if(flagClaim){
+        // Claim: we lend money; no maximum (we can always lend more), but treat delta difference for editing doesn't matter
       } else {
-        exceeds = amt > balance;
-      }
-      if(exceeds){
-        showAlert('Payment Exceeds Balance', 'error');
-        return;
+        // Regular payment: ensure we don't pay more than remaining
+        let exceeds;
+        if(editing && oldCat === selCat && !!window._editingTxn.debt_claim === flagClaim){
+          const delta = amt - oldAmt;
+          exceeds = delta > balance;
+        } else {
+          exceeds = amt > balance;
+        }
+        if(exceeds){
+          showAlert('Payment Exceeds Balance', 'error');
+          return;
+        }
       }
     }
   }
@@ -885,7 +1037,7 @@ document.getElementById('txnForm')?.addEventListener('submit', async (e)=>{
   // Determine whether this transaction should actually draw from the
   // opening balance.  It is permitted only in the current cycle.
   const finalUseOB = (selectedCycleStart.getTime() === currentCycleStart.getTime()) && !!useOpenBal;
-  const body = {date: payload.date, amount: amt, category_id: selCat, note: payload.note, use_open_balance: finalUseOB};
+  const body = {date: payload.date, amount: amt, category_id: selCat, note: payload.note, use_open_balance: finalUseOB, debt_claim: !!flagClaim, goal_withdrawal: !!flagWithdraw};
 
   if(id){
     await fetch(`/api/transaction/${id}`, {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
@@ -910,6 +1062,17 @@ document.getElementById('txnCancelEdit')?.addEventListener('click', ()=>{
   if(openChk){
     openChk.disabled = false;
     openChk.checked = false;
+  }
+  // Reset and enable claim/withdraw checkboxes when cancelling edit
+  const claimChk = document.getElementById('txnDebtClaim');
+  if(claimChk){
+    claimChk.disabled = false;
+    claimChk.checked = false;
+  }
+  const withChk = document.getElementById('txnGoalWithdraw');
+  if(withChk){
+    withChk.disabled = false;
+    withChk.checked = false;
   }
 });
 
@@ -998,6 +1161,43 @@ document.getElementById('goalCancelEdit')?.addEventListener('click', ()=>{
 // Initial render
 refresh();
 
+// ----- Transaction history controls: show-all toggle and filters -----
+// Maintain state across refreshes
+window._showAllTxns = window._showAllTxns || false;
+window._filterType  = window._filterType  || '';
+window._filterCat   = window._filterCat   || '';
+
+// Event listeners for toggles
+(function(){
+  const showAll = document.getElementById('txnShowAll');
+  if(showAll){
+    // Initialize based on state
+    showAll.checked = !!window._showAllTxns;
+    showAll.addEventListener('change', () => {
+      window._showAllTxns = showAll.checked;
+      refresh();
+    });
+  }
+  const filterType = document.getElementById('txnFilterType');
+  if(filterType){
+    // Initialize
+    filterType.value = window._filterType || '';
+    filterType.addEventListener('change', () => {
+      window._filterType = filterType.value || '';
+      refresh();
+    });
+  }
+  const filterCat = document.getElementById('txnFilterCat');
+  if(filterCat){
+    // Initialize
+    filterCat.value = window._filterCat || '';
+    filterCat.addEventListener('change', () => {
+      window._filterCat = filterCat.value || '';
+      refresh();
+    });
+  }
+})();
+
 // ----- Date change handler for transaction form -----
 // Disable the opening balance checkbox for transactions dated before
 // the current cycle.  Opening balance can only be applied in the
@@ -1023,8 +1223,78 @@ refresh();
           openChk.disabled = false;
         }
       }
+      // Whenever date changes, update visibility of claim/withdraw flags
+      updateTxnFlagsVisibility();
     });
   }
+})();
+
+// ----- Update claim/withdraw flag visibility based on selected category and date -----
+function updateTxnFlagsVisibility(){
+  const catSel = document.getElementById('txnCategory');
+  const dateInput = document.getElementById('txnDate');
+  const claimLabel = document.querySelector('label.flag-claim');
+  const withdrawLabel = document.querySelector('label.flag-withdraw');
+  const claimChk = document.getElementById('txnDebtClaim');
+  const withdrawChk = document.getElementById('txnGoalWithdraw');
+  if(!catSel || !dateInput || !claimLabel || !withdrawLabel || !claimChk || !withdrawChk) return;
+  const selCat = catSel.value;
+  const d = new Date(dateInput.value || new Date());
+  d.setHours(0,0,0,0);
+  const startDay = Math.max(1, Math.min(31, parseInt(window._cycleStartDay || 1)));
+  const currentStart = getCycleStartForDate(new Date(), startDay);
+  const selectedStart = getCycleStartForDate(d, startDay);
+  // Determine flags from editing txn
+  const editing = !!window._editingTxn;
+  // Determine if claim should be shown: show for current or past cycle (not future) when category is linked to a receivable debt
+  let showClaim = false;
+  const debtKind = window._debtInfoMap ? window._debtInfoMap[selCat] : undefined;
+  // Show claim for receivable debts if the selected cycle is current or past (<= current)
+  if(debtKind === 'receivable' && selectedStart.getTime() <= currentStart.getTime()){
+    showClaim = true;
+  }
+  // Determine if withdraw should be shown: show for current or past cycle when category is linked to a goal
+  let showWithdraw = false;
+  if(window._goalCatIds && window._goalCatIds.has(selCat) && selectedStart.getTime() <= currentStart.getTime()){
+    showWithdraw = true;
+  }
+  // If editing an existing transaction, we don't allow toggling flags
+  if(editing){
+    // Show both labels only if original flags were true; hide otherwise
+    showClaim = window._editingTxn.debt_claim;
+    showWithdraw = window._editingTxn.goal_withdrawal;
+    // Disable checkboxes in edit mode
+    claimChk.disabled = true;
+    withdrawChk.disabled = true;
+  } else {
+    // Enable checkboxes when not editing
+    claimChk.disabled = false;
+    withdrawChk.disabled = false;
+    // Reset checkboxes when toggling visibility off
+    if(!showClaim){
+      claimChk.checked = false;
+    }
+    if(!showWithdraw){
+      withdrawChk.checked = false;
+    }
+  }
+  claimLabel.style.display = showClaim ? 'flex' : 'none';
+  withdrawLabel.style.display = showWithdraw ? 'flex' : 'none';
+}
+
+// Hook category change to update flags visibility
+(function(){
+  const catSel = document.getElementById('txnCategory');
+  if(catSel){
+    catSel.addEventListener('change', updateTxnFlagsVisibility);
+  }
+  // Also update flags when the date changes so claim/withdraw options remain consistent
+  const dateInput = document.getElementById('txnDate');
+  if(dateInput){
+    dateInput.addEventListener('change', updateTxnFlagsVisibility);
+  }
+  // initial call
+  updateTxnFlagsVisibility();
 })();
 
 // ---------- Budget start day setup ----------

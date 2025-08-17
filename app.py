@@ -205,13 +205,28 @@ def api_delete_category(cid):
     # prevent deleting linked categories
     if any((d.get("linked_category_id") == cid) for d in data.get("debts", [])) or any((g.get("linked_category_id") == cid) for g in data.get("goals", [])):
         return jsonify({"error":"Category is linked to a Debt/Goal and cannot be deleted here"}), 409
-    # Soft‑delete the category by setting its deleted flag. Do nothing if not found.
-    for c in data.get("categories", []):
+    # Determine if the category exists and gather transaction references
+    cat_index = None
+    for idx, c in enumerate(data.get("categories", [])):
         if c.get("id") == cid:
-            c["deleted"] = True
-            _save_data(data)
-            return jsonify({"ok": True})
-    return jsonify({"error":"Not found"}), 404
+            cat_index = idx
+            break
+    if cat_index is None:
+        return jsonify({"error":"Not found"}), 404
+
+    # Count how many transactions reference this category across all time
+    txn_count = sum(1 for t in data.get("transactions", []) if t.get("category_id") == cid)
+
+    # If there are no transactions referencing this category and it is not linked to a debt or goal,
+    # remove it entirely from the list.  Otherwise, perform a soft delete so that existing
+    # transactions continue to show their original category name.
+    if txn_count == 0:
+        # Also ensure it's not linked to any debt or goal (should have been checked above)
+        data["categories"].pop(cat_index)
+    else:
+        data["categories"][cat_index]["deleted"] = True
+    _save_data(data)
+    return jsonify({"ok": True})
 
 # Debts
 @app.post("/api/debt")
@@ -356,24 +371,43 @@ def api_add_txn():
         "category_id": p.get("category_id"),
         "amount": float(p.get("amount") or 0),
         "note": p.get("note", ""),
-        "use_open_balance": bool(p.get("use_open_balance"))
+        # Flags for special transaction behaviors
+        "use_open_balance": bool(p.get("use_open_balance")),
+        "debt_claim": bool(p.get("debt_claim", False)),
+        "goal_withdrawal": bool(p.get("goal_withdrawal", False)),
     }
     c = next((c for c in data["categories"] if c["id"] == txn["category_id"]), None)
     if not c:
         return jsonify({"error":"Invalid category_id"}), 400
     txn["type"] = c["type"]
+    # Persist transaction immediately
     data.setdefault("transactions", []).append(txn)
 
-    # Auto reflect on linked accounts
+    # Helper functions to compute effect on debts/goals based on flags
+    def _debt_effect(kind, amount, debt_claim):
+        amt = abs(amount)
+        if debt_claim:
+            # Claim means we lent money -> increase balance for receivable, decrease for payable
+            return amt if (kind or "payable") == "receivable" else -amt
+        else:
+            # Regular payment: always reduce balance
+            return -amt
+
+    def _goal_effect(amount, goal_withdrawal):
+        # Withdrawals reduce current; deposits increase current
+        return -amount if goal_withdrawal else amount
+
+    # Apply effects to linked debt
     for d in data.get("debts", []):
         if d.get("linked_category_id") == txn["category_id"]:
-            d["balance"] = max(0.0, float(d.get("balance") or 0) - abs(txn["amount"]))
+            eff = _debt_effect(d.get("kind"), txn["amount"], txn.get("debt_claim", False))
+            d["balance"] = max(0.0, float(d.get("balance") or 0.0) + eff)
             break
+    # Apply effects to linked goal
     for g in data.get("goals", []):
         if g.get("linked_category_id") == txn["category_id"]:
-            cur = float(g.get("current") or 0)
-            delta = float(txn["amount"]) 
-            g["current"] = max(0.0, cur + delta)
+            eff = _goal_effect(txn["amount"], txn.get("goal_withdrawal", False))
+            g["current"] = max(0.0, float(g.get("current") or 0.0) + eff)
             break
 
     _save_data(data)
@@ -391,6 +425,8 @@ def api_update_txn(tid):
 
     old_cat = old.get("category_id")
     old_amt = float(old.get("amount") or 0.0)
+    old_debt_claim = bool(old.get("debt_claim", False))
+    old_goal_withdrawal = bool(old.get("goal_withdrawal", False))
 
     # ---- APPLY new values to the txn ----
     # Only allow known fields, cast amount to float
@@ -407,43 +443,58 @@ def api_update_txn(tid):
     else:
         new_use_open = bool(old.get("use_open_balance", False))
 
+    # Determine new flags for debt_claim and goal_withdrawal.  If not
+    # provided by the client, retain existing values.
+    if "debt_claim" in p:
+        new_debt_claim = bool(p.get("debt_claim"))
+    else:
+        new_debt_claim = old_debt_claim
+
+    if "goal_withdrawal" in p:
+        new_goal_withdrawal = bool(p.get("goal_withdrawal"))
+    else:
+        new_goal_withdrawal = old_goal_withdrawal
+
     # validate category
     cat = next((c for c in data.get("categories", []) if c["id"] == new_cat), None)
     if not cat:
         return jsonify({"error": "Invalid category_id"}), 400
-    
-    # ---- Adjust linked Debts / Goals using deltas ----
-    if old_cat == new_cat:
-        # Same linked target -> simple delta
-        delta = new_amt - old_amt
-        if delta != 0:
-            for g in data.get("goals", []):
-                if g.get("linked_category_id") == new_cat:
-                    g["current"] = max(0.0, float(g.get("current") or 0.0) + delta)
-                    break
-            for d in data.get("debts", []):
-                if d.get("linked_category_id") == new_cat:
-                    # debt shrinks by payment size; delta on |amount|
-                    d["balance"] = max(0.0, float(d.get("balance") or 0.0) - (abs(new_amt) - abs(old_amt)))
-                    break
-    else:
-        # Category changed -> undo old, apply new
-        for g in data.get("goals", []):
-            if g.get("linked_category_id") == old_cat:
-                g["current"] = max(0.0, float(g.get("current") or 0.0) - old_amt)
-                break
+
+    # Helper functions to compute effect on debts/goals based on flags
+    def _debt_effect(kind, amount, debt_claim):
+        amt = abs(amount)
+        if debt_claim:
+            return amt if (kind or "payable") == "receivable" else -amt
+        else:
+            return -amt
+
+    def _goal_effect(amount, goal_withdrawal):
+        return -amount if goal_withdrawal else amount
+
+    # ---- Adjust linked Debts / Goals by reverting old and applying new ----
+    # Revert old
+    if old_cat:
         for d in data.get("debts", []):
             if d.get("linked_category_id") == old_cat:
-                d["balance"] = max(0.0, float(d.get("balance") or 0.0) + old_amt)
+                eff_old = _debt_effect(d.get("kind"), old_amt, old_debt_claim)
+                d["balance"] = max(0.0, float(d.get("balance") or 0.0) - eff_old)
                 break
-
         for g in data.get("goals", []):
-            if g.get("linked_category_id") == new_cat:
-                g["current"] = max(0.0, float(g.get("current") or 0.0) + new_amt)
+            if g.get("linked_category_id") == old_cat:
+                eff_old_g = _goal_effect(old_amt, old_goal_withdrawal)
+                g["current"] = max(0.0, float(g.get("current") or 0.0) - eff_old_g)
                 break
+    # Apply new
+    if new_cat:
         for d in data.get("debts", []):
             if d.get("linked_category_id") == new_cat:
-                d["balance"] = max(0.0, float(d.get("balance") or 0.0) - new_amt)
+                eff_new = _debt_effect(d.get("kind"), new_amt, new_debt_claim)
+                d["balance"] = max(0.0, float(d.get("balance") or 0.0) + eff_new)
+                break
+        for g in data.get("goals", []):
+            if g.get("linked_category_id") == new_cat:
+                eff_new_g = _goal_effect(new_amt, new_goal_withdrawal)
+                g["current"] = max(0.0, float(g.get("current") or 0.0) + eff_new_g)
                 break
 
     # update txn record
@@ -453,7 +504,9 @@ def api_update_txn(tid):
         "amount": new_amt,
         "note": new_note,
         "type": cat["type"],
-        "use_open_balance": new_use_open
+        "use_open_balance": new_use_open,
+        "debt_claim": new_debt_claim,
+        "goal_withdrawal": new_goal_withdrawal
     })
 
     _save_data(data)
@@ -469,16 +522,30 @@ def api_delete_txn(tid):
 
     cat_id = txn.get("category_id")
     amt = float(txn.get("amount") or 0.0)
-    # Roll back effects on Debt: original add reduced balance by |amt| → add it back
+    debt_claim = bool(txn.get("debt_claim", False))
+    goal_withdrawal = bool(txn.get("goal_withdrawal", False))
+
+    # Helper functions
+    def _debt_effect(kind, amount, debt_claim):
+        a = abs(amount)
+        if debt_claim:
+            return a if (kind or "payable") == "receivable" else -a
+        else:
+            return -a
+
+    def _goal_effect(amount, goal_withdrawal):
+        return -amount if goal_withdrawal else amount
+
+    # Roll back effects on Debt and Goal: subtract the effect we previously applied
     for d in data.get("debts", []):
         if d.get("linked_category_id") == cat_id:
-            d["balance"] = float(d.get("balance") or 0.0) + abs(amt)
+            eff = _debt_effect(d.get("kind"), amt, debt_claim)
+            d["balance"] = max(0.0, float(d.get("balance") or 0.0) - eff)
             break
-
-    # Roll back effects on Goal: original add added (+amt) to current → subtract it
     for g in data.get("goals", []):
         if g.get("linked_category_id") == cat_id:
-            g["current"] = max(0.0, float(g.get("current") or 0.0) - amt)
+            effg = _goal_effect(amt, goal_withdrawal)
+            g["current"] = max(0.0, float(g.get("current") or 0.0) - effg)
             break
 
     # Remove the transaction

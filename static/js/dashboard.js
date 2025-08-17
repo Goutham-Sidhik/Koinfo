@@ -57,11 +57,25 @@
       monthLabels.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
     }
 
-    // --- Split transactions by category type ---
+    // --- Split transactions by category type.  Override type based on flags:
+    // goal withdrawals are treated as income; debt claims are treated as expense.
     const typeOfCat = (id) => (cats.find(c => c.id === id) || {}).type;
-    const expenseTxns = txns.filter(t => typeOfCat(t.category_id) === 'expense');
-    const savingTxns  = txns.filter(t => typeOfCat(t.category_id) === 'saving');
-    const incomeTxns  = txns.filter(t => typeOfCat(t.category_id) === 'income');
+    const expenseTxns = txns.filter(t => {
+      if (t.debt_claim) return true;
+      if (t.goal_withdrawal) return false;
+      return typeOfCat(t.category_id) === 'expense';
+    });
+    const savingTxns  = txns.filter(t => {
+      if (t.goal_withdrawal) return false; // withdrawals shouldn't be counted as savings
+      // exclude debt claims from savings as they are expenses
+      if (t.debt_claim) return false;
+      return typeOfCat(t.category_id) === 'saving';
+    });
+    const incomeTxns  = txns.filter(t => {
+      if (t.goal_withdrawal) return true;
+      if (t.debt_claim) return false;
+      return typeOfCat(t.category_id) === 'income';
+    });
 
     // --- KPI numbers (all-time) ---
     const totalExp = sum(expenseTxns.map(t => Math.abs(+t.amount || 0)));
@@ -199,7 +213,11 @@
     if (recentTxnsEl) {
       recentTxnsEl.innerHTML = txns.slice(0, 12).map(t => {
         const cat = cats.find(c => c.id === t.category_id);
-        const sign = (cat && (cat.type === 'saving' || cat.type === 'income')) ? '+' : '-';
+        // Determine sign: goal withdrawals count as income; debt claims as expense
+        let actualType = cat ? cat.type : '';
+        if (t.goal_withdrawal) actualType = 'income';
+        else if (t.debt_claim) actualType = 'expense';
+        const sign = (actualType === 'saving' || actualType === 'income') ? '+' : '-';
         const note = t.note ? ` • ${t.note}` : '';
         return `
           <div class="row" style="justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.08);padding:6px 0">

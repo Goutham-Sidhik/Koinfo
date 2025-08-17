@@ -12,14 +12,28 @@
       <input type="number" min="1" name="amount" id="txnAmount" placeholder="Amount" required>
       <select name="category_id" id="txnCategory" required></select>
       <input type="text" name="note" id="txnNote" placeholder="Note (optional)">
-      <!-- Checkbox to mark if the transaction should draw from the opening balance -->
-      <label style="display:flex; align-items:center; font-size:12px; gap:6px; margin-top:4px;">
-        <input type="checkbox" id="txnUseOpenBal" name="use_open_balance" style="accent-color: var(--edit);">
-        <span>Use Opening Balance</span>
-      </label>
-      <div class="row">
-        <button id="txnSubmit" class="btn btn--primary" type="submit">Add</button>
-        <button id="txnCancelEdit" type="button" class="btn btn--ghost" style="display:none">Cancel</button>
+      <!-- Flags row and action buttons are grouped into a single row spanning both columns.  This keeps the Add button aligned on the same line as the flags. -->
+      <div class="txn-flags-actions" style="grid-column:1 / -1; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-top:4px;">
+        <div class="flag-group" style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+          <!-- Checkbox to mark if the transaction should draw from the opening balance -->
+          <label style="display:flex; align-items:center; font-size:12px; gap:6px;">
+            <input type="checkbox" id="txnUseOpenBal" name="use_open_balance" style="accent-color: var(--edit);">
+            <span>Use Opening Balance</span>
+          </label>
+          <!-- Extra flags: claim (for receivable debts) and withdrawal (for goals).  Hidden by default; shown via JS when appropriate. -->
+          <label class="flag-claim" style="display:none; align-items:center; font-size:12px; gap:6px;">
+            <input type="checkbox" id="txnDebtClaim" name="debt_claim" style="accent-color: var(--edit);">
+            <span>Debt Claim</span>
+          </label>
+          <label class="flag-withdraw" style="display:none; align-items:center; font-size:12px; gap:6px;">
+            <input type="checkbox" id="txnGoalWithdraw" name="goal_withdrawal" style="accent-color: var(--edit);">
+            <span>Goal Withdrawal</span>
+          </label>
+        </div>
+        <div class="button-group" style="display:flex; gap:8px; align-items:center;">
+          <button id="txnSubmit" class="btn btn--primary" type="submit">Add</button>
+          <button id="txnCancelEdit" type="button" class="btn btn--ghost" style="display:none">Cancel</button>
+        </div>
       </div>
     </form>
   </div>
@@ -98,6 +112,25 @@
     <h2 class="card__title">Transactions
       <span style="color: var(--muted);font-size:small;">(Cycle History)</span>
     </h2>
+    <!-- Controls for toggling history and filtering.  The show-all checkbox is styled as a toggle switch.  Two drop-downs allow filtering by category type and specific category. -->
+    <div class="row" style="justify-content:space-between; gap:8px; margin-bottom:10px; flex-wrap: wrap; align-items:center;">
+      <div class="toggle-container" style="display:flex; align-items:center; gap:6px;">
+        <label class="switch">
+          <input type="checkbox" id="txnShowAll">
+          <span class="slider round"></span>
+        </label>
+        <span style="font-size:12px;">Show All</span>
+      </div>
+      <select id="txnFilterType" class="txn-filter-select" style="flex:1; min-width:100px;">
+        <option value="">All Types</option>
+        <option value="income">Income</option>
+        <option value="expense">Expense</option>
+        <option value="saving">Saving</option>
+      </select>
+      <select id="txnFilterCat" class="txn-filter-select" style="flex:1; min-width:100px;">
+        <option value="">All Categories</option>
+      </select>
+    </div>
     <div id="txnList" class="stack scroll fill" style="text-transform: capitalize;"></div>
   </div>
 </section>

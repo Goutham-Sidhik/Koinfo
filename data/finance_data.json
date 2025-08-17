@@ -1,70 +1,10 @@
 {
   "categories": [
     {
-      "id": "f1e7b4b2-bb04-4e4e-a25e-26db07b8332b",
-      "name": "Rent",
-      "type": "expense",
-      "deleted": true
-    },
-    {
-      "id": "6ce8404b-4158-4a38-88e6-283d4b03993c",
-      "name": "Groceries",
-      "type": "expense",
-      "deleted": true
-    },
-    {
-      "id": "ec23aa57-ee9e-4791-899d-fc7b462e7e0c",
-      "name": "Transport",
-      "type": "expense",
-      "deleted": true
-    },
-    {
-      "id": "bebf160b-f55f-4f5a-ae30-b8da3b02eb58",
-      "name": "Savings",
-      "type": "saving",
-      "deleted": true
-    },
-    {
       "id": "b16188b5-edf8-472a-bb78-1e14d313d16b",
       "name": "Salary",
       "type": "income",
       "deleted": false
-    },
-    {
-      "id": "9fad1bed-4a71-47a8-ab6a-cfcf2f805a08",
-      "name": "qweras - Debt",
-      "type": "expense",
-      "deleted": true
-    },
-    {
-      "id": "7236a631-f15a-4ca0-8be3-53bbbb778d68",
-      "name": "qweras - Debt",
-      "type": "expense",
-      "deleted": true
-    },
-    {
-      "id": "91aa1b59-b816-4869-bb44-071be23af1af",
-      "name": "qweras - Debt",
-      "type": "expense",
-      "deleted": true
-    },
-    {
-      "id": "0974d619-17e9-4c53-bfb9-b91dbfd0ec40",
-      "name": "Rent",
-      "type": "expense",
-      "deleted": true
-    },
-    {
-      "id": "9b8bee39-f935-4984-8d51-90ba44d7ac43",
-      "name": "Rent",
-      "type": "expense",
-      "deleted": true
-    },
-    {
-      "id": "29e866ba-fc99-4cb8-a7ef-1141f9315fe3",
-      "name": "Transport",
-      "type": "expense",
-      "deleted": true
     },
     {
       "id": "24b3501c-b850-4d89-81d1-b565f80d09ad",
@@ -79,30 +19,87 @@
       "deleted": false
     },
     {
-      "id": "81f99922-9931-41a8-aa76-02e6a1de52d0",
+      "id": "1b194bc1-9944-4482-bd96-aaad8f6a48ff",
+      "name": "Transport",
+      "type": "expense",
+      "deleted": false
+    },
+    {
+      "id": "399f8cfd-1240-4002-9b8a-c6ea73203645",
+      "name": "Rent",
+      "type": "expense",
+      "deleted": false
+    },
+    {
+      "id": "9ec51794-955e-497b-a284-b64b97d00383",
+      "name": "EMI 1 - Debt",
+      "type": "expense",
+      "deleted": false
+    },
+    {
+      "id": "612cc92c-40c0-4e66-96f8-eb9b24811ee1",
+      "name": "EMI 2 - Debt",
+      "type": "expense",
+      "deleted": false
+    },
+    {
+      "id": "0fc67a6f-84a7-4c3c-90d8-43583e1cd1ed",
+      "name": "Returns (Intrest)",
+      "type": "income",
+      "deleted": false
+    },
+    {
+      "id": "a77688c3-baee-4899-897f-e55b6834f76b",
+      "name": "Subscriptions",
+      "type": "expense",
+      "deleted": false
+    },
+    {
+      "id": "23b81177-a604-42ad-8ff9-1a361f12b134",
+      "name": "Credit Card",
+      "type": "expense",
+      "deleted": false
+    },
+    {
+      "id": "e9fc4e21-ed21-443e-830b-663837b5ca1a",
       "name": "Emergency Fund - Goal",
       "type": "saving",
       "deleted": false
     },
     {
-      "id": "1b194bc1-9944-4482-bd96-aaad8f6a48ff",
-      "name": "Transport",
+      "id": "afdc90cc-187b-4a2f-a77e-4c1cbf3762fc",
+      "name": "WiFi",
       "type": "expense",
       "deleted": false
+    },
+    {
+      "id": "088d3a07-73d5-4070-9244-b4c7a1a57dbd",
+      "name": "Miscellaneous",
+      "type": "expense",
+      "deleted": false
+    },
+    {
+      "id": "d96658e0-7b41-4f84-a27a-30f56bbcd579",
+      "name": "Shopping",
+      "type": "expense",
+      "deleted": false
+    },
+    {
+      "id": "a092fe3e-4dbb-4a71-a9a8-59e5af1eb045",
+      "name": "Get Back - Debt",
+      "type": "income",
+      "deleted": false
+    },
+    {
+      "id": "62cfe4a7-de8d-403c-a5ff-0746b0b3a3d5",
+      "name": "Dad - Debt",
+      "type": "income",
+      "deleted": true
     }
   ],
   "transactions": [
     {
-      "id": "11c0b48c-2ab7-4ee6-8c90-92d0bc720eec",
-      "date": "2025-07-01",
-      "category_id": "b16188b5-edf8-472a-bb78-1e14d313d16b",
-      "amount": 81000.0,
-      "note": "",
-      "use_open_balance": false,
-      "type": "income"
-    },
-    {
-      "id": "739ec96d-8c7e-48c2-a2a6-b7fb9ee8a137",
+      "id": "fe7c51c0-8dce-485f-b523-11d42e8c3eae",
       "date": "2025-06-01",
       "category_id": "b16188b5-edf8-472a-bb78-1e14d313d16b",
       "amount": 81000.0,
@@ -111,34 +108,311 @@
       "type": "income"
     },
     {
-      "id": "c4d65889-24ec-4d73-b337-d02e8e4d816c",
-      "date": "2025-08-01",
-      "category_id": "b16188b5-edf8-472a-bb78-1e14d313d16b",
-      "amount": 81000.0,
+      "id": "f47f8da9-b535-44f2-8487-adb2cfb26501",
+      "date": "2025-06-03",
+      "category_id": "24b3501c-b850-4d89-81d1-b565f80d09ad",
+      "amount": 200.0,
+      "note": "",
+      "use_open_balance": false,
+      "type": "expense"
+    },
+    {
+      "id": "ba681ee9-71eb-4dd6-9e70-80638b6f4282",
+      "date": "2025-06-04",
+      "category_id": "399f8cfd-1240-4002-9b8a-c6ea73203645",
+      "amount": 19000.0,
+      "note": "",
+      "use_open_balance": false,
+      "type": "expense"
+    },
+    {
+      "id": "037b8c24-cb0b-4a76-aeb4-fd4f0f5c0198",
+      "date": "2025-06-05",
+      "category_id": "24b3501c-b850-4d89-81d1-b565f80d09ad",
+      "amount": 400.0,
+      "note": "",
+      "use_open_balance": false,
+      "type": "expense"
+    },
+    {
+      "id": "f7081d6b-e547-41af-a7f6-98f29affd5e5",
+      "date": "2025-06-05",
+      "category_id": "9ec51794-955e-497b-a284-b64b97d00383",
+      "amount": 13751.0,
+      "note": "",
+      "use_open_balance": false,
+      "type": "expense"
+    },
+    {
+      "id": "3e922662-2eee-4207-8563-9a545087b25c",
+      "date": "2025-06-07",
+      "category_id": "1b194bc1-9944-4482-bd96-aaad8f6a48ff",
+      "amount": 1300.0,
+      "note": "",
+      "use_open_balance": false,
+      "type": "expense"
+    },
+    {
+      "id": "4a21182e-1dea-4fba-aafd-853e54c6cae7",
+      "date": "2025-06-10",
+      "category_id": "0fc67a6f-84a7-4c3c-90d8-43583e1cd1ed",
+      "amount": 20000.0,
       "note": "",
       "use_open_balance": false,
       "type": "income"
     },
     {
-      "id": "0bf8e4fd-3ca3-4f75-81f8-f5e263fc0b32",
-      "date": "2025-07-25",
+      "id": "85421329-b911-4fed-82d5-4eea3ef3f054",
+      "date": "2025-06-08",
+      "category_id": "24b3501c-b850-4d89-81d1-b565f80d09ad",
+      "amount": 1000.0,
+      "note": "",
+      "use_open_balance": false,
+      "type": "expense"
+    },
+    {
+      "id": "aa9aa280-68ca-4d21-84d6-bc6a12fba033",
+      "date": "2025-06-09",
+      "category_id": "1b194bc1-9944-4482-bd96-aaad8f6a48ff",
+      "amount": 1000.0,
+      "note": "",
+      "use_open_balance": false,
+      "type": "expense"
+    },
+    {
+      "id": "70155b94-8a14-4aad-8c67-26c299d587f2",
+      "date": "2025-06-10",
+      "category_id": "612cc92c-40c0-4e66-96f8-eb9b24811ee1",
+      "amount": 8270.0,
+      "note": "",
+      "use_open_balance": false,
+      "type": "expense"
+    },
+    {
+      "id": "9cb76b59-5674-418e-a599-0ea6e1635798",
+      "date": "2025-06-12",
       "category_id": "9773faa7-2d91-445e-9a46-51ca550c4f8f",
-      "amount": 160000.0,
+      "amount": 7000.0,
+      "note": "Mutual Funds",
+      "use_open_balance": false,
+      "type": "saving"
+    },
+    {
+      "id": "5e343f8c-e867-4943-a855-d517cf6ea11c",
+      "date": "2025-06-14",
+      "category_id": "a77688c3-baee-4899-897f-e55b6834f76b",
+      "amount": 2000.0,
+      "note": "",
+      "use_open_balance": false,
+      "type": "expense"
+    },
+    {
+      "id": "000523ad-25d3-4172-977d-e369180d6fd6",
+      "date": "2025-06-20",
+      "category_id": "23b81177-a604-42ad-8ff9-1a361f12b134",
+      "amount": 22000.0,
+      "note": "",
+      "use_open_balance": false,
+      "type": "expense"
+    },
+    {
+      "id": "4cac83ef-99d8-4db4-8c95-01efdc5c391d",
+      "date": "2025-06-20",
+      "category_id": "e9fc4e21-ed21-443e-830b-663837b5ca1a",
+      "amount": 1000.0,
       "note": "",
       "use_open_balance": false,
       "type": "saving"
     },
     {
-      "id": "894e2e9c-cc91-4834-b33c-669905488921",
-      "date": "2025-07-29",
-      "category_id": "81f99922-9931-41a8-aa76-02e6a1de52d0",
-      "amount": 1234.0,
+      "id": "6c71f08c-6a89-4a37-bf2e-ba954687319d",
+      "date": "2025-06-27",
+      "category_id": "1b194bc1-9944-4482-bd96-aaad8f6a48ff",
+      "amount": 2000.0,
+      "note": "",
+      "use_open_balance": false,
+      "type": "expense"
+    },
+    {
+      "id": "d25b7dba-d454-4639-9cb4-a1a2108d6c66",
+      "date": "2025-06-25",
+      "category_id": "24b3501c-b850-4d89-81d1-b565f80d09ad",
+      "amount": 3000.0,
+      "note": "",
+      "use_open_balance": false,
+      "type": "expense"
+    },
+    {
+      "id": "4850f30b-6bfa-412d-b832-b92b52a6d9e0",
+      "date": "2025-06-22",
+      "category_id": "afdc90cc-187b-4a2f-a77e-4c1cbf3762fc",
+      "amount": 1200.0,
+      "note": "",
+      "use_open_balance": false,
+      "type": "expense"
+    },
+    {
+      "id": "a112276c-f7d2-4020-9ee0-a2afc6556cbc",
+      "date": "2025-06-29",
+      "category_id": "088d3a07-73d5-4070-9244-b4c7a1a57dbd",
+      "amount": 5000.0,
+      "note": "",
+      "use_open_balance": false,
+      "type": "expense"
+    },
+    {
+      "id": "2be29239-d1c6-4f67-bafc-976503067a44",
+      "date": "2025-06-27",
+      "category_id": "d96658e0-7b41-4f84-a27a-30f56bbcd579",
+      "amount": 5000.0,
+      "note": "",
+      "use_open_balance": false,
+      "type": "expense"
+    },
+    {
+      "id": "b7cd7391-2c44-4538-a889-6e6f7ab3085d",
+      "date": "2025-06-29",
+      "category_id": "088d3a07-73d5-4070-9244-b4c7a1a57dbd",
+      "amount": 879.0,
+      "note": "",
+      "use_open_balance": false,
+      "type": "expense"
+    },
+    {
+      "id": "5e4ef176-4a34-4d28-b956-76ffac2823f9",
+      "date": "2025-07-01",
+      "category_id": "b16188b5-edf8-472a-bb78-1e14d313d16b",
+      "amount": 85000.0,
+      "note": "",
+      "use_open_balance": false,
+      "type": "income"
+    },
+    {
+      "id": "6fed664b-ace3-4b95-81fa-543feb3a409e",
+      "date": "2025-07-03",
+      "category_id": "1b194bc1-9944-4482-bd96-aaad8f6a48ff",
+      "amount": 1000.0,
+      "note": "",
+      "use_open_balance": false,
+      "type": "expense"
+    },
+    {
+      "id": "c66c6fae-b648-46d0-9a29-5e3dc0df081e",
+      "date": "2025-07-05",
+      "category_id": "24b3501c-b850-4d89-81d1-b565f80d09ad",
+      "amount": 500.0,
+      "note": "",
+      "use_open_balance": false,
+      "type": "expense"
+    },
+    {
+      "id": "1f517a34-a364-4f33-84ec-7c5adea48d01",
+      "date": "2025-07-10",
+      "category_id": "9ec51794-955e-497b-a284-b64b97d00383",
+      "amount": 13751.0,
+      "note": "",
+      "use_open_balance": false,
+      "type": "expense"
+    },
+    {
+      "id": "9e4ffdcd-6b56-487c-9692-e0481e2d8b1c",
+      "date": "2025-07-13",
+      "category_id": "a77688c3-baee-4899-897f-e55b6834f76b",
+      "amount": 2000.0,
+      "note": "",
+      "use_open_balance": false,
+      "type": "expense"
+    },
+    {
+      "id": "de437316-a66f-45e0-ba70-46c9dd90aac6",
+      "date": "2025-07-15",
+      "category_id": "23b81177-a604-42ad-8ff9-1a361f12b134",
+      "amount": 10000.0,
+      "note": "",
+      "use_open_balance": false,
+      "type": "expense"
+    },
+    {
+      "id": "f136250d-04c4-432c-8fd8-025efaa21458",
+      "date": "2025-07-12",
+      "category_id": "9773faa7-2d91-445e-9a46-51ca550c4f8f",
+      "amount": 9000.0,
+      "note": "Mutual Funds",
+      "use_open_balance": false,
+      "type": "saving"
+    },
+    {
+      "id": "e1000747-21a1-4f59-b671-b2b3e745ea07",
+      "date": "2025-07-20",
+      "category_id": "afdc90cc-187b-4a2f-a77e-4c1cbf3762fc",
+      "amount": 600.0,
+      "note": "",
+      "use_open_balance": false,
+      "type": "expense"
+    },
+    {
+      "id": "a8f818e2-d847-418a-b4e6-a5831a010c3a",
+      "date": "2025-07-23",
+      "category_id": "e9fc4e21-ed21-443e-830b-663837b5ca1a",
+      "amount": 6000.0,
       "note": "",
       "use_open_balance": false,
       "type": "saving"
+    },
+    {
+      "id": "e5bbc41e-eaa2-4404-92e6-9c63f50e1b6a",
+      "date": "2025-07-29",
+      "category_id": "088d3a07-73d5-4070-9244-b4c7a1a57dbd",
+      "amount": 3000.0,
+      "note": "",
+      "use_open_balance": false,
+      "type": "expense"
+    },
+    {
+      "id": "479c60e0-0dea-49cf-95fd-41c07299d8fc",
+      "date": "2025-07-23",
+      "category_id": "a092fe3e-4dbb-4a71-a9a8-59e5af1eb045",
+      "amount": 40000.0,
+      "note": "",
+      "use_open_balance": false,
+      "debt_claim": true,
+      "goal_withdrawal": false,
+      "type": "income"
     }
   ],
-  "debts": [],
-  "goals": [],
+  "debts": [
+    {
+      "id": "2b67a647-2d52-4abb-b167-f4c4a75d7a36",
+      "name": "EMI 1",
+      "balance": 457498.0,
+      "kind": "payable",
+      "linked_category_id": "9ec51794-955e-497b-a284-b64b97d00383"
+    },
+    {
+      "id": "6069fc53-76dd-46ad-b782-1075ba669895",
+      "name": "EMI 2",
+      "balance": 174730.0,
+      "kind": "payable",
+      "linked_category_id": "612cc92c-40c0-4e66-96f8-eb9b24811ee1"
+    },
+    {
+      "id": "38f4251a-e4b3-425c-90cb-ce241856426f",
+      "name": "Get Back",
+      "balance": 320000.0,
+      "kind": "receivable",
+      "linked_category_id": "a092fe3e-4dbb-4a71-a9a8-59e5af1eb045"
+    }
+  ],
+  "goals": [
+    {
+      "id": "305af606-4732-40e8-a5cf-bee71f2d753b",
+      "name": "Emergency Fund",
+      "target": 500000.0,
+      "current": 7000.0,
+      "deadline": "2025-12-31",
+      "created": "2025-08-17",
+      "linked_category_id": "e9fc4e21-ed21-443e-830b-663837b5ca1a"
+    }
+  ],
   "open_balance": 0.0
 }
