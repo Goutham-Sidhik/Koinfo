@@ -1,15 +1,66 @@
 
 {% extends 'base.html' %}
 {% block content %}
+<!-- Top summary cards for expenses, income, savings and debts -->
 <section class="grid grid--kpi" id="kpis"></section>
+
+<!-- Charts and breakdowns -->
 <section class="grid grid--charts">
-  <div class="card"><h2 class="card__title">Expenses vs Savings (Last 6 Months)</h2><canvas id="lineChart"></canvas></div>
-  <div class="card"><h2 class="card__title">Expense Breakdown</h2><canvas id="donutChart"></canvas></div>
-  <div class="card"><h2 class="card__title">Debt Balances</h2><canvas id="barChart"></canvas></div>
+  <!-- Trends card: includes time range selector and cycle info -->
+  <div class="card" id="trendsCard">
+    <div class="row" style="justify-content:space-between; align-items:center;">
+      <h2 class="card__title">Financial Trends</h2> 
+      <span id="cycleInfo" style="font-size:12px;color:var(--muted);margin-top:4px; margin-bottom:6px;"></span>
+      <select id="timeRangeSelect" class="txn-filter-select" style="font-size:12px; min-width:120px;">
+        <option value="cycle">Current Cycle</option>
+        <option value="3m">Last 3 Months</option>
+        <option value="6m">Last 6 Months</option>
+        <option value="12m">Last 12 Months</option>
+      </select>
+    </div>
+    <!-- <div id="cycleInfo" style="font-size:12px;color:var(--muted);margin-top:4px; margin-bottom:6px;"></div> -->
+    <canvas id="lineChart"></canvas>
+  </div>
+  <!-- Expense breakdown card: legend on left, pie on right.  Includes an overlay for drill‑downs. -->
+  <div class="card" id="expenseCard" style="position:relative;">
+    <h2 class="card__title">Category Distribution</h2>
+    <div class="row" style="display:flex; gap:16px; align-items:stretch;">
+      <div id="expenseLegend" style="flex:0.4; max-width:40%; overflow-y:auto; max-height:260px;"></div>
+      <div style="flex:0.6; min-width:150px;">
+        <canvas id="donutChart"></canvas>
+      </div>
+    </div>
+    <!-- Overlay shown when drilling into a category type.  Hidden by default; populated via JS. -->
+    <div id="expenseOverlay" style="display:none; position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.85); border-radius:18px; z-index:10; padding:16px; overflow:auto;">
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+        <button id="overlayCloseBtn" style="background:transparent;border:none;color:#fff;font-size:20px;cursor:pointer;">×</button>
+        <h3 id="overlayTitle" style="margin:0; font-size:18px;"></h3>
+      </div>
+      <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:flex-start;">
+        <div style="flex:0.5; min-width:180px;">
+          <canvas id="overlayPie"></canvas>
+        </div>
+        <div id="overlayLegend" style="flex:0.5; max-height:300px; overflow-y:auto;"></div>
+      </div>
+    </div>
+  </div>
+  <!-- Debts card: bar chart with dues vs claims -->
+  <div class="card" id="debtsCard">
+    <h2 class="card__title">Debts Status</h2>
+    <canvas id="barChart"></canvas>
+  </div>
 </section>
+
+<!-- Goals and top transactions -->
 <section class="grid grid--half">
-  <div class="card"><h2 class="card__title">Active Goals</h2><div id="goalsList" class="stack scroll"></div></div>
-  <div class="card"><h2 class="card__title">Recent Transactions</h2><div id="recentTxns" class="stack scroll"></div></div>
+  <div class="card" id="goalsCard">
+    <h2 class="card__title">Goals Progress</h2>
+    <div id="goalsList" class="stack scroll"></div>
+  </div>
+  <div class="card" id="topTxnsCard">
+    <h2 class="card__title">Recent Transactions</h2>
+    <div id="topTxns" class="stack scroll"></div>
+  </div>
 </section>
 <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 {% endblock %}

@@ -11,6 +11,8 @@
   <!-- Import Fredoka One from Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- html2canvas for PNG download in dashboard -->
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 </head>
 <body>
   <div class="container">
@@ -35,6 +37,15 @@
             title="Export your finances (JSON)"
           >
             My Data
+          </a>
+        {% endif %}
+        {% if 'Manage' not in title %}
+          <a 
+            id="downloadBtn"
+            class="nav__link nav__link--primary nav__link--glow"
+            title="Export Dashboard (PNG)"
+          >
+            Download
           </a>
         {% endif %}
       </nav>
