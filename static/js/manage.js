@@ -406,7 +406,7 @@ async function refresh(){
   // not show again in this browser.
   const openBalCheck = parseFloat(data.open_balance || 0);
   // localStorage.clear();
-  if((localStorage.getItem('openBalSet') !== '1') && openBalCheck === 0){
+  if((sessionStorage.getItem('openBalSet') !== '1') && openBalCheck === 0){
     // Set a flag immediately to avoid re‑prompting during the async call
     // localStorage.setItem('openBalSet','');
     setTimeout(async () => {
@@ -419,7 +419,7 @@ async function refresh(){
         </p>
       `;
       await showDialog(msg, 'Got it');
-      localStorage.setItem('openBalSet','1');
+      sessionStorage.setItem('openBalSet','1');
     }, 0);
   }
   // Derive a list of active (non-deleted) categories for form selections.

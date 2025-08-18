@@ -94,12 +94,27 @@
   function computeSummary(data, catsById){
     const txns = data.transactions || [];
     let totalInc = 0, totalExp = 0, totalSav = 0;
+    const expenseByCat = new Map();
     txns.forEach(t => {
       const type = classifyTransaction(t, catsById);
       const amt = Math.abs(+t.amount || 0);
-      if(type === 'income') totalInc += amt;
-      else if(type === 'expense') totalExp += amt;
-      else if(type === 'saving') totalSav += amt;
+      if (type === 'income') {
+      totalInc += amt;
+      } else if (type === 'expense') {
+        totalExp += amt;
+
+        // Resolve category name (fallbacks included)
+        let catName = 'Uncategorized';
+        if (t.category_id && catsById && catsById[t.category_id]) {
+          catName = catsById[t.category_id].name || catName;
+        } else if (t.category_name) {
+          catName = t.category_name;
+        }
+
+        expenseByCat.set(catName, (expenseByCat.get(catName) || 0) + amt);
+      } else if (type === 'saving') {
+        totalSav += amt;
+      }
     });
     // Debts: accumulate dues and claims separately
     let dues = 0, claims = 0;
@@ -108,9 +123,19 @@
       if((d.kind || 'payable') === 'payable') dues += bal;
       else claims += bal;
     });
+    // Determine top expense category
+    let topExpCat = null, topExpVal = 0;
+    for (const [cat, val] of expenseByCat.entries()) {
+      if (val > topExpVal) {
+        topExpVal = val;
+        topExpCat = cat;
+      }
+    }
+    // % of income that the top expense category consumed
+    const topExpPctOfIncome = totalInc ? +((topExpVal / totalInc) * 100).toFixed(1) : 0;
     // Net position = income - expenses - savings
     const net = totalInc - totalExp - totalSav;
-    return { totalInc, totalExp, totalSav, net, dues, claims };
+    return { totalInc, totalExp, totalSav, net, dues, claims, topExpCat, topExpPctOfIncome };
   }
 
   // Compute trends data for a given time range.  Returns an object with
@@ -150,6 +175,7 @@
     const savData = [];
     if(interval === 'day'){
       let d = cloneDate(startDate);
+      const diffDays = Math.floor((endDate - d) / (1000 * 60 * 60 * 24));
       while(d <= endDate){
         const segStart = cloneDate(d);
         const segEnd = cloneDate(d);
@@ -169,7 +195,11 @@
         expData.push(expSum);
         savData.push(savSum);
         // Next day
-        d.setDate(d.getDate() + 1);
+        if (diffDays > 10) {
+          d.setDate(d.getDate() + 2); // Skip 2 days for larger ranges
+        } else {
+          d.setDate(d.getDate() + 1);
+        }
       }
     } else if(interval === 'halfmonth'){
       let segStart = cloneDate(startDate);
@@ -363,13 +393,13 @@
   // Render KPI cards
   function renderKpis(container, summary){
     if(!container) return;
-    const { totalInc, totalExp, totalSav, net, dues, claims } = summary;
+    const { totalInc, totalExp, totalSav, net, dues, claims, topExpCat, topExpPctOfIncome } = summary;
     const debtText = `<span>Dues: </span><span class="text-dues">${fmtINR(dues)}</span> • <span>Claims: </span><span class="text-claims">${fmtINR(claims)}</span>`;
     const expPct = totalInc ? ((totalExp / totalInc) * 100).toFixed(2) : 0;
     const savPct = totalInc ? ((totalSav / totalInc) * 100).toFixed(2) : 0;
     container.innerHTML = [
       `<div class="kpi"><div class="kpi__label">Total Income</div><div class="kpi__value text-income">${fmtINR(totalInc)}</div><div class="detail-line">Cash Balance: <span class="${net >= 0 ? 'text-income' : 'text-expense'}">${fmtINR(net)}</span></div></div>`,
-      `<div class="kpi"><div class="kpi__label">Total Expense</div><div class="kpi__value text-expense">${fmtINR(totalExp)}</div><div><span class="detail-line">Spent: </span><span class="text-expense">${expPct}% </span><span class="detail-line">of income</span></div></div>`,
+      `<div class="kpi"><div class="kpi__label">Total Expense</div><div class="kpi__value text-expense">${fmtINR(totalExp)}</div><div><span class="detail-line">${topExpCat}: </span><span class="text-expense">${topExpPctOfIncome}% </span><span class="detail-line">of income</span></div></div>`,
       `<div class="kpi"><div class="kpi__label">Total Saving</div><div class="kpi__value text-saving">${fmtINR(totalSav)}</div><div><span class="detail-line">Saved: </span><span class="text-saving">${savPct}% </span><span class="detail-line">of income</span></div></div>`,
       `<div class="kpi"><div class="kpi__label">Total Debt</div><div class="kpi__value">${fmtINR(dues + claims)}</div><div class="detail-line">${debtText}</div></div>`
     ].join('');
@@ -394,9 +424,9 @@
     console.log('Present cycle data:', incData, expData, savData);
     console.log('Previous cycle data:', prevInc, prevExp, prevSav);
     if(prevInc && prevInc.length){
-      datasets.push({ label:'Prev Income', data: prevInc, tension:0.35, borderColor: colInc, borderDash:[4,4], backgroundColor: colInc + '55', fill:false });
-      datasets.push({ label:'Prev Expenses', data: prevExp, tension:0.35, borderColor: colExp, borderDash:[4,4], backgroundColor: colExp + '55', fill:false });
-      datasets.push({ label:'Prev Savings', data: prevSav, tension:0.35, borderColor: colSav, borderDash:[4,4], backgroundColor: colSav + '55', fill:false });
+      datasets.push({ label:'Prev Income', data: prevInc, tension:0.35, borderColor: colInc, borderDash:[12,12], backgroundColor: colInc + '55', fill:false});
+      datasets.push({ label:'Prev Expenses', data: prevExp, tension:0.35, borderColor: colExp, borderDash:[12,12], backgroundColor: colExp + '55', fill:false});
+      datasets.push({ label:'Prev Savings', data: prevSav, tension:0.35, borderColor: colSav, borderDash:[12,12], backgroundColor: colSav + '55', fill:false});
     }
     const chartLabels = labels;
     lineChart = new Chart(canvasEl, {
