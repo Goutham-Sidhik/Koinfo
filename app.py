@@ -1,6 +1,7 @@
-from flask import Flask, jsonify, request, render_template, send_file
-from datetime import date, datetime
-import json, uuid, os, io
+from flask import Flask, jsonify, request, render_template
+from datetime import date
+import json, uuid, os
+from copy import deepcopy
 
 APP_ROOT = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(APP_ROOT, "data")
@@ -600,7 +601,6 @@ def api_update_open_balance():
 @app.post("/api/reset_data")
 def api_reset_data():
     # Deep copy the default data to avoid modifying the constant
-    from copy import deepcopy
     fresh = deepcopy(DEFAULT_DATA)
     _save_data(fresh)
     return jsonify(fresh)
