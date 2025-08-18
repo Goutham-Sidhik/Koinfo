@@ -1360,4 +1360,167 @@ document.addEventListener('DOMContentLoaded', updateCycleRange); // <-- run on l
     localStorage.setItem('cycleStartDay', val.toString());
     refresh();
   });
+/**
+   * Generate and download an insights report for the current budget cycle.
+   * This function computes totals, category breakdowns, top transactions,
+   * debts summary and goal progress from the existing data set.  It does
+   * not use a time range selector (unlike the dashboard) and always
+   * operates on the cycle beginning on the user’s selected cycle start
+   * day up to today.  The resulting report is downloaded as a plain
+   * text file.  Exposed on window.prepareInsights for use by the
+   * Actions dropdown.
+   */
+  async function prepareInsights(){
+    try {
+      const data = await getData();
+      const catsById = {};
+      (data.categories || []).forEach(c => { catsById[c.id] = c; });
+      // Determine cycle start day from global var or localStorage
+      const startDay = window._cycleStartDay || parseInt(localStorage.getItem('cycleStartDay')) || 1;
+      // Compute cycle start date and end date (today)
+      const now = new Date();
+      now.setHours(0,0,0,0);
+      const cycleStart = getCycleStartForDate(now, startDay);
+      // Collect transactions within cycle inclusive of today
+      const txns = (data.transactions || []).filter(t => {
+        const d = new Date(t.date);
+        return d >= cycleStart && d <= now;
+      });
+      // Classification helper similar to dashboard
+      function classify(t){
+        if(t.goal_withdrawal) return 'income';
+        if(t.debt_claim) return 'expense';
+        const cat = catsById[t.category_id];
+        return cat ? cat.type : null;
+      }
+      // Totals
+      let totalInc = 0, totalExp = 0, totalSav = 0;
+      txns.forEach(t => {
+        const type = classify(t);
+        const amt = Math.abs(+t.amount || 0);
+        if(type === 'income') totalInc += amt;
+        else if(type === 'expense') totalExp += amt;
+        else if(type === 'saving') totalSav += amt;
+      });
+      const net = totalInc - totalExp - totalSav;
+      // Category breakdown by type and category names
+      const sums = { income:0, expense:0, saving:0 };
+      const sub = { income: {}, expense: {}, saving: {} };
+      txns.forEach(t => {
+        const type = classify(t);
+        const amt = Math.abs(+t.amount || 0);
+        if(!type) return;
+        sums[type] += amt;
+        const cat = catsById[t.category_id];
+        const name = cat ? cat.name : 'Unknown';
+        sub[type][name] = (sub[type][name] || 0) + amt;
+      });
+      // Convert sub breakdown to sorted arrays
+      const subArr = {};
+      ['income','expense','saving'].forEach(key => {
+        const arr = Object.entries(sub[key]).map(([label, value]) => ({ label, value }));
+        arr.sort((a,b) => b.value - a.value);
+        subArr[key] = arr;
+      });
+      // Top transactions: one per type
+      const topTxns = { income:null, expense:null, saving:null };
+      txns.forEach(t => {
+        const type = classify(t);
+        const amt = Math.abs(+t.amount || 0);
+        if(!type) return;
+        if(!topTxns[type] || amt > Math.abs(+topTxns[type].amount || 0)){
+          topTxns[type] = t;
+        }
+      });
+      // Debts summary
+      let dues = 0, claims = 0;
+      (data.debts || []).forEach(d => {
+        const bal = +d.balance || 0;
+        if((d.kind || 'payable') === 'payable') dues += bal;
+        else claims += bal;
+      });
+      // Goals info
+      // Compute goal status similar to dashboard's computeGoals
+      const goalsInfo = (data.goals || []).map(g => {
+        const cur = +g.current || 0;
+        const tgt = Math.max(+g.target || 0, 0.01);
+        const pct = Math.min(100, Math.round((cur / tgt) * 100));
+        const dl = new Date(g.deadline);
+        const nowDate = new Date();
+        const daysLeft = Math.ceil((dl - nowDate) / (24*3600*1000));
+        const alerts = [];
+        if(daysLeft <= 10 && daysLeft >= 0) alerts.push('Approaching');
+        if(cur >= tgt) alerts.push(cur > tgt ? 'Target Exceeded' : 'Reached');
+        return { name: g.name, current: cur, target: tgt, pct, daysLeft, alerts };
+      });
+      // Build report lines
+      const fmtINRval = v => {
+        try { return new Intl.NumberFormat(undefined,{style:'currency',currency:'INR'}).format(v||0); }
+        catch { return '₹' + Number(v||0).toFixed(2); } };
+      const lines = [];
+      const fmtDate = d => new Date(d).toISOString().split('T')[0];
+      lines.push('Koinfo Insights Report');
+      lines.push('Period: ' + fmtDate(cycleStart) + ' to ' + fmtDate(now));
+      lines.push('');
+      lines.push('Totals');
+      lines.push(`  Income:  ${fmtINRval(totalInc)}`);
+      lines.push(`  Expenses: ${fmtINRval(totalExp)}`);
+      lines.push(`  Savings: ${fmtINRval(totalSav)}`);
+      lines.push(`  Net Position: ${fmtINRval(net)} (${net >= 0 ? 'Surplus' : 'Deficit'})`);
+      lines.push('');
+      lines.push('Category Breakdown');
+      ['expense','saving','income'].forEach(key => {
+        const lbl = key.charAt(0).toUpperCase() + key.slice(1);
+        lines.push(`  ${lbl}: ${fmtINRval(sums[key] || 0)}`);
+        subArr[key].slice(0,3).forEach(item => {
+          lines.push(`    • ${item.label}: ${fmtINRval(item.value)}`);
+        });
+      });
+      lines.push('');
+      lines.push('Top Transactions');
+      ['expense','saving','income'].forEach(key => {
+        const t = topTxns[key];
+        if(t){
+          const cat = catsById[t.category_id] || { name:'Unknown', type:key };
+          lines.push(`  Highest ${key}: ${cat.name} on ${fmtDate(t.date)} – ${fmtINRval(Math.abs(+t.amount || 0))}`);
+        } else {
+          lines.push(`  Highest ${key}: None`);
+        }
+      });
+      lines.push('');
+      lines.push('Debts');
+      lines.push(`  Total Dues: ${fmtINRval(dues)}`);
+      lines.push(`  Total Claims: ${fmtINRval(claims)}`);
+      (data.debts || []).forEach(d => {
+        lines.push(`    • ${d.name}: ${fmtINRval(+d.balance || 0)} (${(d.kind || 'payable') === 'payable' ? 'Due' : 'Claim'})`);
+      });
+      lines.push('');
+      lines.push('Goals');
+      if(goalsInfo.length === 0){
+        lines.push('  None');
+      } else {
+        goalsInfo.forEach(g => {
+          lines.push(`  • ${g.name}: ${fmtINRval(g.current)} / ${fmtINRval(g.target)} (${g.pct}% complete)`);
+          if(g.daysLeft < 0){ lines.push('    Status: Past Due'); }
+          else if(g.daysLeft === 0){ lines.push('    Status: Due Today'); }
+          else { lines.push(`    Status: ${g.daysLeft} day(s) left`); }
+          if(g.alerts && g.alerts.length){ lines.push('    Alerts: ' + g.alerts.join(', ')); }
+        });
+      }
+      // Compose report and trigger download
+      const report = lines.join('\n');
+      const blob = new Blob([report], { type: 'text/plain;charset=utf-8' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `koinfo_insights_cycle_${Date.now()}.txt`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch(err){
+      console.error(err);
+      if(window.showAlert) window.showAlert('Error generating insights','error');
+    }
+  }
+  // Expose on window
+  window.prepareInsights = prepareInsights;
 })();
