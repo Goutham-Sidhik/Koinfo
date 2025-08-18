@@ -77,16 +77,18 @@
 
   // Filter transactions within [startDate, endDate] inclusive
   function filterTxnsByDate(txns, startDate, endDate){
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
+    // Force end date to midnight of the NEXT day
+    const end = new Date(endDate);
+    end.setHours(0, 0, 0, 0);
+    end.setDate(end.getDate() + 1);
     return txns.filter(t => {
       const d = new Date(t.date);
-      return d >= startDate && d <= endDate;
+      return d >= start && d <= end;
     });
   }
 
-  // Sum absolute amounts of given transactions
-  function sumAmounts(list){
-    return (list || []).reduce((acc, t) => acc + Math.abs(+t.amount || 0), 0);
-  }
 
   // Build summary totals across all transactions and debts
   function computeSummary(data, catsById){
@@ -247,6 +249,7 @@
         segTxns.forEach(t => {
           const type = classifyTransaction(t, catsById);
           const amt = Math.abs(+t.amount || 0);
+          console.log('Transaction:', t.date, 'Type:', type, 'Amount:', amt);
           if(type === 'income') incSum += amt;
           else if(type === 'expense') expSum += amt;
           else if(type === 'saving') savSum += amt;
@@ -254,7 +257,7 @@
         prevInc.push(incSum);
         prevExp.push(expSum);
         prevSav.push(savSum);
-        prevLabels.push(pStart.toLocaleDateString('en-GB',{ day:'2-digit', month:'short' }));
+        prevLabels.push(pStart.toLocaleDateString('en-GB',{ day:'2-digit'}));
         pStart.setDate(pStart.getDate() + 1);
       }
       // Cycle info string
@@ -388,6 +391,7 @@
     datasets.push({ label:'Expenses', data: expData, tension:0.35, borderColor: colExp, backgroundColor: colExp + '33', fill:false });
     datasets.push({ label:'Savings', data: savData, tension:0.35, borderColor: colSav, backgroundColor: colSav + '33', fill:false });
     // Add previous cycle comparison if available
+    console.log('Present cycle data:', incData, expData, savData);
     console.log('Previous cycle data:', prevInc, prevExp, prevSav);
     if(prevInc && prevInc.length){
       datasets.push({ label:'Prev Income', data: prevInc, tension:0.35, borderColor: colInc, borderDash:[4,4], backgroundColor: colInc + '55', fill:false });
@@ -795,4 +799,112 @@
   } else {
     init();
   }
+
+  /**
+   * Generate and download an insights report for the currently selected
+   * time range.  This function fetches the full data model, filters
+   * transactions to the range defined by the timeRangeSelect element
+   * (cycle, 3m, 6m, 12m) and then builds a human‑readable summary of
+   * income, expenses, savings, debts, goals and top transactions.  The
+   * resulting report is offered as a plain text file.  This method
+   * relies on helper functions defined in this module such as
+   * computeTrends, computeBreakdown, computeTopTxns, computeGoals and
+   * computeDebtsInfo.  It is exposed on window.prepareInsights for
+   * access by the global actions menu.
+   */
+  async function prepareInsights(){
+    try {
+      const data = await getData();
+      const catsById = {};
+      (data.categories || []).forEach(c => { catsById[c.id] = c; });
+      // Determine selected time range from the selector (default to cycle)
+      const sel = document.getElementById('timeRangeSelect');
+      const range = sel ? sel.value : 'cycle';
+      const cycleStartDay = getCycleStartDay();
+      const trends = computeTrends(data, catsById, range, cycleStartDay);
+      // Filter transactions to selected range
+      const periodTxns = filterTxnsByDate(data.transactions || [], trends.rangeStart, trends.rangeEnd);
+      // Compute totals by summing incData/expData/savData arrays
+      const totalInc = (trends.incData || []).reduce((a,b) => a + b, 0);
+      const totalExp = (trends.expData || []).reduce((a,b) => a + b, 0);
+      const totalSav = (trends.savData || []).reduce((a,b) => a + b, 0);
+      const net = totalInc - totalExp - totalSav;
+      // Compute breakdown
+      const breakdown = computeBreakdown(periodTxns, catsById);
+      // Compute top transactions
+      const topTxns = computeTopTxns(periodTxns, catsById);
+      // Compute debts and goals across all data (debts/goals not filtered by timeframe)
+      const debtsInfo = computeDebtsInfo(data.debts || []);
+      const goalsInfo = computeGoals(data.goals || [], catsById);
+      // Build report lines
+      const lines = [];
+      const fmtDate = d => new Date(d).toISOString().split('T')[0];
+      lines.push('Koinfo Insights Report');
+      lines.push('Period: ' + fmtDate(trends.rangeStart) + ' to ' + fmtDate(trends.rangeEnd));
+      lines.push('');
+      lines.push('Totals');
+      lines.push(`  Income:  ${fmtINR(totalInc)}`);
+      lines.push(`  Expenses: ${fmtINR(totalExp)}`);
+      lines.push(`  Savings: ${fmtINR(totalSav)}`);
+      lines.push(`  Net Position: ${fmtINR(net)} (${net >= 0 ? 'Surplus' : 'Deficit'})`);
+      lines.push('');
+      lines.push('Category Breakdown');
+      breakdown.typeLabels.forEach((lbl, idx) => {
+        const val = breakdown.typeData[idx];
+        lines.push(`  ${lbl}: ${fmtINR(val)}`);
+        // List top 3 categories for this type
+        const typeKey = ['expense','saving','income'][idx];
+        const arr = breakdown.sub[typeKey] || [];
+        arr.slice(0,3).forEach(sub => {
+          lines.push(`    • ${sub.label}: ${fmtINR(sub.value)}`);
+        });
+      });
+      lines.push('');
+      lines.push('Top Transactions');
+      ['expense','saving','income'].forEach(type => {
+        const t = topTxns[type];
+        if(t){
+          const cat = catsById[t.category_id] || { name:'Unknown', type:type };
+          lines.push(`  Highest ${type}: ${cat.name} on ${fmtDate(t.date)} – ${fmtINR(Math.abs(+t.amount || 0))}`);
+        } else {
+          lines.push(`  Highest ${type}: None`);
+        }
+      });
+      lines.push('');
+      lines.push('Debts');
+      lines.push(`  Total Dues: ${fmtINR(debtsInfo.dues)}`);
+      lines.push(`  Total Claims: ${fmtINR(debtsInfo.claims)}`);
+      (data.debts || []).forEach(d => {
+        lines.push(`    • ${d.name}: ${fmtINR(+d.balance || 0)} (${(d.kind || 'payable') === 'payable' ? 'Due' : 'Claim'})`);
+      });
+      lines.push('');
+      lines.push('Goals');
+      if(goalsInfo.length === 0){
+        lines.push('  None');
+      } else {
+        goalsInfo.forEach(g => {
+          lines.push(`  • ${g.name}: ${fmtINR(g.current)} / ${fmtINR(g.target)} (${g.pct}% complete)`);
+          if(g.daysLeft < 0){ lines.push('    Status: Past Due'); }
+          else if(g.daysLeft === 0){ lines.push('    Status: Due Today'); }
+          else { lines.push(`    Status: ${g.daysLeft} day(s) left`); }
+          if(g.alerts && g.alerts.length){ lines.push('    Alerts: ' + g.alerts.join(', ')); }
+        });
+      }
+      // Compose report
+      const report = lines.join('\n');
+      // Trigger download as plain text
+      const blob = new Blob([report], { type: 'text/plain;charset=utf-8' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `koinfo_insights_${range}_${Date.now()}.txt`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch(err){
+      console.error(err);
+      if(window.showAlert) window.showAlert('Error generating insights','error');
+    }
+  }
+  // Expose prepareInsights on the window so actions.js can call it
+  window.prepareInsights = prepareInsights;
 })();

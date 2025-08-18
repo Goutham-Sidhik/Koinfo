@@ -6,6 +6,24 @@ APP_ROOT = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(APP_ROOT, "data")
 DATA_FILE = os.path.join(DATA_DIR, "finance_data.json")
 
+# A default data structure used when resetting the dataset.  This defines
+# the initial categories and empty lists for transactions, debts and
+# goals.  Note: we deliberately do not include the 'id' values from
+# existing data as new UUIDs will be generated when the app first
+# starts.  The categories provided here must match those created in
+# _load_data() on first run.
+DEFAULT_DATA = {
+    "categories": [
+        {"id": str(uuid.uuid4()), "name": "Salary", "type": "income", "deleted": False},
+        {"id": str(uuid.uuid4()), "name": "Groceries", "type": "expense", "deleted": False},
+        {"id": str(uuid.uuid4()), "name": "Investments", "type": "saving", "deleted": False}
+    ],
+    "transactions": [],
+    "debts": [],
+    "goals": [],
+    "open_balance": 0.0
+}
+
 app = Flask(__name__)
 
 # ---------------------- Data helpers ----------------------
@@ -124,7 +142,7 @@ def _ensure_linked_category_for_goal(data, goal):
 
 def _delete_linked_category(data, cat_id):
     """
-    Soft‑delete a linked category by setting its `deleted` flag instead of
+    Soft-delete a linked category by setting its `deleted` flag instead of
     removing it from the list. This allows existing transactions to
     continue referencing the category's name while preventing new
     selections. If the category is not found, no action is taken.
@@ -573,18 +591,20 @@ def api_update_open_balance():
     _save_data(data)
     return jsonify({"open_balance": new_val})
 
-# Downloads
-@app.get("/download/json")
-def download_json():
-    ts = datetime.now().strftime("%Y-%m-%d_%H-%M")
-    fname = f"finance_{ts}.json"
-    data_bytes = json.dumps(_load_data(), ensure_ascii=False, indent=2).encode("utf-8")
-    return send_file(
-        io.BytesIO(data_bytes),
-        mimetype="application/json",
-        as_attachment=True,
-        download_name=fname
-    )
+
+# Reset all data back to the default dataset.  This endpoint overwrites
+# the finance_data.json file with DEFAULT_DATA and returns the new
+# contents.  A POST method is required to avoid accidental resets via
+# GET requests.  Clients should confirm with the user before
+# invoking this endpoint.
+@app.post("/api/reset_data")
+def api_reset_data():
+    # Deep copy the default data to avoid modifying the constant
+    from copy import deepcopy
+    fresh = deepcopy(DEFAULT_DATA)
+    _save_data(fresh)
+    return jsonify(fresh)
+
 
 if __name__ == "__main__":
     app.run(debug=True)

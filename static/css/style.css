@@ -160,6 +160,48 @@
     grid-column: 1 / -1;
 }
 
+/* ----- Dropdown menu for nav actions ----- */
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 110%;
+    background: var(--card);
+    border: 1px solid var(--ring);
+    border-radius: 12px;
+    min-width: 180px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.35);
+    z-index: 50;
+}
+
+.dropdown-content a {
+    display: block;
+    padding: 10px 14px;
+    color: var(--fg);
+    text-decoration: none;
+    font-size: 14px;
+    border-bottom: 1px solid var(--ring);
+}
+.dropdown-content a:last-child {
+    border-bottom: none;
+}
+.dropdown-content a:hover {
+    background: #1a2247;
+}
+
+/* ----- Footer styling ----- */
+.footer {
+    text-align: center;
+    padding-top: 6px;
+    font-size: 10px;
+    color: var(--muted);
+}
+
 * {
     box-sizing: border-box;
     font-family: 'Brush Script MT', cursive;
@@ -182,6 +224,7 @@ body {
     max-width: none;
     margin: 0;
     padding: 16px 16px;
+    padding-bottom: 10px;
     height: 100vh;
     display: flex;
     flex-direction: column
@@ -191,7 +234,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 24px
+    margin-bottom: 12px
 }
 
 .brand img {
@@ -336,7 +379,7 @@ body {
 .card__title {
     margin: 0 0 10px 0;
     font-size: 20px;
-    font-weight: 700;
+    font-weight: 700
 }
 
 .grid {
@@ -508,7 +551,7 @@ body {
 }
 
 .scroll:hover::-webkit-scrollbar-thumb {
-    box-shadow: 0 0 14px rgba(236, 72, 153, .8);
+    box-shadow: 0 0 14px rgba(236, 72, 153, .8)
 }
 
 
