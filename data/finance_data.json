@@ -95,6 +95,42 @@
       "name": "Dad - Debt",
       "type": "income",
       "deleted": true
+    },
+    {
+      "id": "1af93855-d043-4359-ab7b-9361c860ef00",
+      "name": "qweras - Debt",
+      "type": "income",
+      "deleted": true
+    },
+    {
+      "id": "91f0cb78-1b8b-4b35-aa93-23ca6e04d1b8",
+      "name": "test - Debt",
+      "type": "expense",
+      "deleted": true
+    },
+    {
+      "id": "d16fea59-a531-4b3f-9dc1-d7526e788632",
+      "name": "test - Goal",
+      "type": "saving",
+      "deleted": false
+    },
+    {
+      "id": "6a629ce7-ba84-4cd4-8dae-c11e7fc99982",
+      "name": "qweras - Debt",
+      "type": "income",
+      "deleted": true
+    },
+    {
+      "id": "daec5932-0532-46e3-8e9a-ad0b1863d77d",
+      "name": "yui - Goal",
+      "type": "saving",
+      "deleted": false
+    },
+    {
+      "id": "05b81906-a23f-4a34-b7ab-b19a6940569f",
+      "name": "qweras - Goal",
+      "type": "saving",
+      "deleted": false
     }
   ],
   "transactions": [
@@ -378,27 +414,181 @@
       "debt_claim": true,
       "goal_withdrawal": false,
       "type": "income"
+    },
+    {
+      "id": "394f7c47-8392-4773-aaa1-a32770228da2",
+      "date": "2025-08-01",
+      "category_id": "b16188b5-edf8-472a-bb78-1e14d313d16b",
+      "amount": 87000.0,
+      "note": "",
+      "use_open_balance": false,
+      "debt_claim": false,
+      "goal_withdrawal": false,
+      "type": "income"
+    },
+    {
+      "id": "4c464f6a-76b3-442b-a79f-95cc4e0e957f",
+      "date": "2025-08-05",
+      "category_id": "9ec51794-955e-497b-a284-b64b97d00383",
+      "amount": 13751.0,
+      "note": "",
+      "use_open_balance": false,
+      "debt_claim": false,
+      "goal_withdrawal": false,
+      "type": "expense"
+    },
+    {
+      "id": "7603d860-e977-48c4-bc02-5ea52e8dca8c",
+      "date": "2025-08-10",
+      "category_id": "612cc92c-40c0-4e66-96f8-eb9b24811ee1",
+      "amount": 8270.0,
+      "note": "",
+      "use_open_balance": false,
+      "debt_claim": false,
+      "goal_withdrawal": false,
+      "type": "expense"
+    },
+    {
+      "id": "563c1bf6-c908-48d1-9c82-87d10623f387",
+      "date": "2025-08-12",
+      "category_id": "9773faa7-2d91-445e-9a46-51ca550c4f8f",
+      "amount": 15000.0,
+      "note": "Mutual Funds",
+      "use_open_balance": false,
+      "debt_claim": false,
+      "goal_withdrawal": false,
+      "type": "saving"
+    },
+    {
+      "id": "acaab97f-10e3-4102-acc4-5548517ce2ea",
+      "date": "2025-08-03",
+      "category_id": "e9fc4e21-ed21-443e-830b-663837b5ca1a",
+      "amount": 10000.0,
+      "note": "",
+      "use_open_balance": false,
+      "debt_claim": false,
+      "goal_withdrawal": false,
+      "type": "saving"
+    },
+    {
+      "id": "8fa1b626-03cd-4349-b718-001fb24299fd",
+      "date": "2025-08-08",
+      "category_id": "399f8cfd-1240-4002-9b8a-c6ea73203645",
+      "amount": 25000.0,
+      "note": "",
+      "use_open_balance": false,
+      "debt_claim": false,
+      "goal_withdrawal": false,
+      "type": "expense"
+    },
+    {
+      "id": "3d271bb6-c427-47c7-94db-00670839ac38",
+      "date": "2025-08-15",
+      "category_id": "a77688c3-baee-4899-897f-e55b6834f76b",
+      "amount": 1000.0,
+      "note": "",
+      "use_open_balance": false,
+      "debt_claim": false,
+      "goal_withdrawal": false,
+      "type": "expense"
+    },
+    {
+      "id": "b0117766-8e66-494c-a96f-0fee40aca2cb",
+      "date": "2025-08-16",
+      "category_id": "afdc90cc-187b-4a2f-a77e-4c1cbf3762fc",
+      "amount": 600.0,
+      "note": "",
+      "use_open_balance": false,
+      "debt_claim": false,
+      "goal_withdrawal": false,
+      "type": "expense"
+    },
+    {
+      "id": "c311ef40-bef3-43b3-9113-3d38baa8aaf2",
+      "date": "2025-08-13",
+      "category_id": "0fc67a6f-84a7-4c3c-90d8-43583e1cd1ed",
+      "amount": 20000.0,
+      "note": "",
+      "use_open_balance": false,
+      "debt_claim": false,
+      "goal_withdrawal": false,
+      "type": "income"
+    },
+    {
+      "id": "7d3d1c76-d153-471f-8c24-d7417f6dc2a4",
+      "date": "2025-08-11",
+      "category_id": "a092fe3e-4dbb-4a71-a9a8-59e5af1eb045",
+      "amount": 50000.0,
+      "note": "",
+      "use_open_balance": false,
+      "debt_claim": false,
+      "goal_withdrawal": false,
+      "type": "income"
+    },
+    {
+      "id": "8dc92d04-b1d3-4ffc-a757-a21113fbdde2",
+      "date": "2025-08-13",
+      "category_id": "a092fe3e-4dbb-4a71-a9a8-59e5af1eb045",
+      "amount": 30000.0,
+      "note": "",
+      "use_open_balance": false,
+      "debt_claim": true,
+      "goal_withdrawal": false,
+      "type": "income"
+    },
+    {
+      "id": "30df0d44-dad3-42fa-9587-57ed3cb447dc",
+      "date": "2025-08-16",
+      "category_id": "d16fea59-a531-4b3f-9dc1-d7526e788632",
+      "amount": 15000.0,
+      "note": "",
+      "use_open_balance": true,
+      "debt_claim": false,
+      "goal_withdrawal": false,
+      "type": "saving"
+    },
+    {
+      "id": "1c624fb5-c5f1-40e3-be05-9c46beb8d913",
+      "date": "2025-08-19",
+      "category_id": "daec5932-0532-46e3-8e9a-ad0b1863d77d",
+      "amount": 3000.0,
+      "note": "",
+      "use_open_balance": false,
+      "debt_claim": false,
+      "goal_withdrawal": false,
+      "type": "saving"
+    },
+    {
+      "id": "0750f109-5b03-4633-9038-b1812fe220ae",
+      "date": "2025-08-12",
+      "category_id": "399f8cfd-1240-4002-9b8a-c6ea73203645",
+      "amount": 8000.0,
+      "note": "",
+      "use_open_balance": false,
+      "debt_claim": false,
+      "goal_withdrawal": false,
+      "type": "expense"
     }
   ],
   "debts": [
     {
       "id": "2b67a647-2d52-4abb-b167-f4c4a75d7a36",
       "name": "EMI 1",
-      "balance": 457498.0,
+      "balance": 443747.0,
       "kind": "payable",
       "linked_category_id": "9ec51794-955e-497b-a284-b64b97d00383"
     },
     {
       "id": "6069fc53-76dd-46ad-b782-1075ba669895",
       "name": "EMI 2",
-      "balance": 174730.0,
+      "balance": 166460.0,
       "kind": "payable",
       "linked_category_id": "612cc92c-40c0-4e66-96f8-eb9b24811ee1"
     },
     {
       "id": "38f4251a-e4b3-425c-90cb-ce241856426f",
       "name": "Get Back",
-      "balance": 320000.0,
+      "balance": 300000.0,
       "kind": "receivable",
       "linked_category_id": "a092fe3e-4dbb-4a71-a9a8-59e5af1eb045"
     }
@@ -407,12 +597,39 @@
     {
       "id": "305af606-4732-40e8-a5cf-bee71f2d753b",
       "name": "Emergency Fund",
-      "target": 500000.0,
-      "current": 7000.0,
+      "target": 20000.0,
+      "current": 17000.0,
       "deadline": "2025-12-31",
       "created": "2025-08-17",
       "linked_category_id": "e9fc4e21-ed21-443e-830b-663837b5ca1a"
+    },
+    {
+      "id": "2532a5ac-c697-4743-9758-174b9fb27de9",
+      "name": "test",
+      "target": 15000.0,
+      "current": 15000.0,
+      "deadline": "2025-08-19",
+      "created": "2025-08-18",
+      "linked_category_id": "d16fea59-a531-4b3f-9dc1-d7526e788632"
+    },
+    {
+      "id": "8a8a3130-19fb-4e88-aebb-bf69747998c6",
+      "name": "yui",
+      "target": 25000.0,
+      "current": 3000.0,
+      "deadline": "2025-08-28",
+      "created": "2025-08-19",
+      "linked_category_id": "daec5932-0532-46e3-8e9a-ad0b1863d77d"
+    },
+    {
+      "id": "6060d268-375d-4bb7-aec6-ea6bf65b913e",
+      "name": "qweras",
+      "target": 100000.0,
+      "current": 0.0,
+      "deadline": "2025-09-17",
+      "created": "2025-08-19",
+      "linked_category_id": "05b81906-a23f-4a34-b7ab-b19a6940569f"
     }
   ],
-  "open_balance": 0.0
+  "open_balance": 15000.0
 }

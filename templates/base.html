@@ -4,13 +4,15 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="icon" type="image/png" href="{{ url_for('static', filename='icon.png') }}">
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='icon.ico') }}">
   <title>{{ title or "Kinfo" }}</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=2025-08-10-2">
   <!-- Import Fredoka One from Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- html2canvas for PNG download in dashboard -->
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 </head>
 <body>
   <div class="container">
@@ -28,15 +30,14 @@
           class="nav__link {% if 'Manage' not in title %}nav__link--primary nav__link--glow{% endif %}"
           href="{{ url_for('page_manage') }}"
         >Manage</a>
-        {% if 'Manage' in title %}
-          <a 
-            class="nav__link nav__link--primary nav__link--glow" 
-            href="{{ url_for('download_json') }}" 
-            title="Export your finances (JSON)"
-          >
-            My Data
-          </a>
-        {% endif %}
+        {# Dropdown actions: present on all pages.  Contains reset and insights download. #}
+        <div class="dropdown">
+          <a id="actionsMenuButton" class="nav__link nav__link--primary nav__link--glow dropdown-toggle" type="button" style="padding:10px 14px; border:none; cursor:pointer;">Actions ▾</a>
+          <div class="dropdown-content" id="actionsMenu">
+            <a href="#" id="downloadInsightsLink">Insights Report</a>
+            <a href="#" id="resetDataLink">Reset Data</a>
+          </div>
+        </div>
       </nav>
     </header>
     <main class="{{ main_class or 'main' }}">
@@ -45,9 +46,14 @@
     <!-- Alert container for pop‑up notifications.  Populated by alerts.js. -->
     <div id="alert-container"></div>
 
+    <!-- Footer with copyright notice -->
+    <footer class="footer">© 2025 Koinfo. All rights reserved.</footer>
+
     <!-- Global alerts helper.  Defines window.showAlert() used throughout the app.
          Loaded after content so that it can find the alert container. -->
     <script src="{{ url_for('static', filename='js/alerts.js') }}"></script>
+    <!-- Dropdown actions: handles reset data and insights download across pages. -->
+    <script src="{{ url_for('static', filename='js/actions.js') }}"></script>
   </div>
 </body>
 </html>

@@ -16,6 +16,62 @@
     --exp: #ff0000ff;
     --inc: #09ff00ff;
     --sav: #00e1ffff;
+    --claim: var(--ok);
+    --due: var(--bad);
+}
+
+/* ----- Dashboard color helpers ----- */
+/* Classes to colorize text based on transaction or debt type.  These are used in the dashboard KPIs,
+   top transactions and other sections. */
+.text-expense { color: var(--bad); }
+.text-income { color: var(--ok); }
+.text-saving { color: var(--sav); }
+.text-dues { color: var(--bad); }
+.text-claims { color: var(--ok); }
+
+/* Sub‑pie overlay container.  Hidden by default; shown via JS. */
+#expenseSubPie {
+    padding: 12px;
+    background: var(--card2);
+    border: 1px solid var(--ring);
+    border-radius: 12px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+/* Additional styling for top transactions list */
+#topTxns .txn-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+    font-size: 14px;
+}
+#topTxns .txn-item:last-child { border-bottom: none; }
+
+/* Size constraints for the donut charts so that they fit within their card.  The overlay pie
+   shares the same constraints. */
+#donutChart,
+#overlayPie {
+    width: 100% !important;
+    max-height: 240px;
+    height: 240px !important;
+}
+
+/* Ensure the trends line chart has a reasonable height even when there are few data points. */
+#lineChart {
+    width: 100% !important;
+    max-height: 260px;
+    height: 260px !important;
+}
+
+/* Style for KPI sub lines (multiple details within a KPI card) */
+/* Larger detail line in KPI cards for better visibility */
+.kpi .detail-line {
+    font-size: 14px;
+    margin-top: 6px;
+    color: var(--muted);
+    font-weight: 600;
 }
 
 /* ----- Toggle switch for Show All transactions ----- */
@@ -104,9 +160,52 @@
     grid-column: 1 / -1;
 }
 
+/* ----- Dropdown menu for nav actions ----- */
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 110%;
+    background: var(--card);
+    border: 1px solid var(--ring);
+    border-radius: 12px;
+    min-width: 180px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.35);
+    z-index: 50;
+}
+
+.dropdown-content a {
+    display: block;
+    padding: 10px 14px;
+    color: var(--fg);
+    text-decoration: none;
+    font-size: 14px;
+    border-bottom: 1px solid var(--ring);
+}
+.dropdown-content a:last-child {
+    border-bottom: none;
+}
+.dropdown-content a:hover {
+    background: #1a2247;
+}
+
+/* ----- Footer styling ----- */
+.footer {
+    text-align: center;
+    padding-top: 6px;
+    font-size: 10px;
+    color: var(--muted);
+}
+
 * {
     box-sizing: border-box;
-    font-family: 'Brush Script MT', cursive;
+    /* font-family: 'Brush Script MT', cursive; */
+    font-family: "Comic Sans MS", monospace;
 }
 
 html,
@@ -116,7 +215,8 @@ body {
 
 body {
     margin: 0;
-    font-family: 'Brush Script MT', cursive;
+    /* font-family: 'Brush Script MT', cursive; */
+    /* font-family: 'Bradley hand', cursive; */
     background: linear-gradient(120deg, #121a3a 0%, #090f1f 100%);
     color: var(--fg)
 }
@@ -126,6 +226,7 @@ body {
     max-width: none;
     margin: 0;
     padding: 16px 16px;
+    padding-bottom: 10px;
     height: 100vh;
     display: flex;
     flex-direction: column
@@ -135,7 +236,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 24px
+    margin-bottom: 12px
 }
 
 .brand img {
@@ -649,7 +750,8 @@ input[type="date"] {
 .kpi__label {
     font-size: 12px;
     text-transform: uppercase;
-    color: var(--muted)
+    font-weight: 700;
+    color: #ffffff;
 }
 
 .kpi__value {
@@ -677,3 +779,12 @@ textarea {
     color: var(--fg)
 }
 
+.legend-list{
+  display: grid;
+  align-content: center;   /* vertical centering of all rows */
+  gap: 6px;
+  height: 220px;           /* or 100% if parent has a fixed height */
+  overflow-y: auto;
+  overflow-x: hidden;      /* prevent horizontal scroll */
+  padding-right: 4px;
+}
