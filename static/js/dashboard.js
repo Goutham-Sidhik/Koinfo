@@ -297,7 +297,6 @@
         segTxns.forEach(t => {
           const type = classifyTransaction(t, catsById);
           const amt = Math.abs(+t.amount || 0);
-          console.log('Transaction:', t.date, 'Type:', type, 'Amount:', amt);
           if(type === 'income') incSum += amt;
           else if(type === 'expense') expSum += amt;
           else if(type === 'saving') savSum += amt;
@@ -440,8 +439,6 @@
     datasets.push({ label:'Expenses', data: expData, tension:0.35, borderColor: colExp, backgroundColor: colExp + '33', fill:false });
     datasets.push({ label:'Savings', data: savData, tension:0.35, borderColor: colSav, backgroundColor: colSav + '33', fill:false });
     // Add previous cycle comparison if available
-    console.log('Present cycle data:', incData, expData, savData);
-    console.log('Previous cycle data:', prevInc, prevExp, prevSav);
     if(prevInc && prevInc.length){
       datasets.push({ label:'Prev Income', data: prevInc, tension:0.35, borderColor: colInc, borderDash:[12,12], backgroundColor: colInc + '55', fill:false});
       datasets.push({ label:'Prev Expenses', data: prevExp, tension:0.35, borderColor: colExp, borderDash:[12,12], backgroundColor: colExp + '55', fill:false});
@@ -865,7 +862,7 @@
       if(window.html2pdf) return;
       await new Promise((resolve, reject) => {
         const s = document.createElement('script');
-        s.src = "https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js";
+        s.src = "https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.0/dist/html2pdf.bundle.min.js";
         s.onload = resolve;
         s.onerror = reject;
         document.head.appendChild(s);
@@ -900,7 +897,7 @@
           .period { color:#666; margin-bottom: 12px; }
           .summary-chip { background:#f5f7fb; border:1px solid #e6e9f2; padding:12px 14px; border-radius:10px; margin: 12px 0 18px; font-weight:600; }
           .grid { display:grid; grid-template-columns: 1fr 1fr; gap:14px; }
-          .card { border:1px solid #e6e9f2; border-radius:12px; padding:14px; }
+          .card { border:1px solid #c2c3c7ff; border-radius:12px; padding:14px; background:transparent; }
           .card h2 { margin:0 0 8px; font-size:18px; }
           .row { display:flex; justify-content:space-between; margin:6px 0; }
           .muted { color:#666; }
@@ -908,8 +905,8 @@
           .bad { color:#b11226; font-weight:600; }
           .pill { display:inline-block; padding:2px 8px; border-radius:999px; font-weight:600; border:1px solid #e6e9f2; background:#fafbff; }
           .pill.exp { color:#b11226; background: #fff5f6; border-color:#ffd9de; }
-          .pill.inc { color:#0a7a3b; background: #f2fbf5; border-color:#cdeed7; }
-          .pill.sav { color:#0a5ab1; background: #f1f7ff; border-color:#d6e8ff; }
+          .pill.sav { color:#0a7a3b; background: #f2fbf5; border-color:#cdeed7; }
+          .pill.inc { color:#0a5ab1; background: #f1f7ff; border-color:#d6e8ff; }
           .list { margin: 6px 0 0 0; padding-left: 16px; }
           .list li { margin: 4px 0; }
           .section { margin-top: 16px; }
@@ -917,17 +914,20 @@
           .k { color:#444; }
           .v { font-weight:600; }
           .small { font-size:12px; }
-          /* Charts styles removed */
         </style>
       `;
       const makeTopList = (items) => {
         if(!items || !items.length) return '<div class="muted small">None</div>';
         return `<ul class="list">${items.slice(0,3).map(s => `<li><span class="k">${s.label}</span> — <span class="v">${s.formatted}</span>${s.share ? ` <span class="muted small">(${s.share})</span>` : ''}</li>`).join('')}</ul>`;
       };
+      // <img src="data:image/png;base64,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" alt="Logo" style="height:50px;"></img>
       return `
         ${css}
         <div class="report">
-          <h1>Koinfo Insights Report</h1>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <h1>Koinfo Insights Report</h1>
+            <img src="static/icon.png" alt="Logo" style="height:50px;"></img>
+            </div>
           <div class="period">${rangeLabel}</div>
           <div class="summary-chip">${summaryLine}</div>
           <div class="grid">
@@ -1054,19 +1054,19 @@
       // Debts info
       const debtsInfoRaw = computeDebtsInfo(data.debts || []);
       const debtsInfo = (() => {
-      const dueline = [];
-      const claim = [];
-      (data.debts || []).forEach(d => {
-        const isDue = (d.kind || 'payable') === 'payable';
-        const line = `• ${d.name}: ${fmtINR(+d.balance || 0)} (${isDue ? 'Due' : 'Claim'})`;
-        (isDue ? dueline : claim).push(line);
-      });
-      return {
-        duesFmt: fmtINR(debtsInfoRaw.dues),
-        claimsFmt: fmtINR(debtsInfoRaw.claims),
-        dueline,  
-        claim      
-      };
+        const dueline = [];
+        const claim = [];
+        (data.debts || []).forEach(d => {
+          const isDue = (d.kind || 'payable') === 'payable';
+          const line = `• ${d.name}: ${fmtINR(+d.balance || 0)} (${isDue ? 'Due' : 'Claim'})`;
+          (isDue ? dueline : claim).push(line);
+        });
+        return {
+          duesFmt: fmtINR(debtsInfoRaw.dues),
+          claimsFmt: fmtINR(debtsInfoRaw.claims),
+          dueline,  
+          claim      
+        };
       })();
       const netDebt = (debtsInfoRaw.dues || 0) - (debtsInfoRaw.claims || 0);
       const netDebtLabel = netDebt >= 0 ? `<span class="bad">Net Debt: ${fmtINR(netDebt)}</span>` : `<span class="good">Net Lender: ${fmtINR(Math.abs(netDebt))}</span>`;
@@ -1112,14 +1112,18 @@
         netDebtLabel
       });
       // Generate PDF
-      timeStamp = Date.now()
+      // Declare a timestamp to construct the filename.  If `timeStamp`
+      // were assigned without declaration it would leak into the global
+      // scope, which is undesirable and could cause conflicts.  Use a
+      // local constant instead.
+      const timeStamp = Date.now();
       try {
         await ensureHtml2Pdf();
         const opt = {
-          margin: [10,10,10,10],
+          margin: [10, 10, 10, 10],
           filename: `koinfo_insights_${range}_${timeStamp}.pdf`,
-          html2canvas: { scale: 2, useCORS: true },
-          jsPDF: { unit:'mm', format:'a3', orientation:'portrait'}
+          html2canvas: { scale: 2, useCORS: true, allowTaint: false },
+          jsPDF: { unit: 'mm', format: 'a3', orientation: 'portrait' }
         };
         await window.html2pdf().set(opt).from(html).save();
       } catch(e){

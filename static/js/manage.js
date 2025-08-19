@@ -1386,7 +1386,7 @@ document.addEventListener('DOMContentLoaded', updateCycleRange); // <-- run on l
       if(window.html2pdf) return;
       await new Promise((resolve, reject) => {
         const s = document.createElement('script');
-        s.src = "https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js";
+        s.src = "https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.0/dist/html2pdf.bundle.min.js";
         s.onload = resolve;
         s.onerror = reject;
         document.head.appendChild(s);
@@ -1427,7 +1427,7 @@ document.addEventListener('DOMContentLoaded', updateCycleRange); // <-- run on l
           .period { color:#666; margin-bottom: 12px; }
           .summary-chip { background:#f5f7fb; border:1px solid #e6e9f2; padding:12px 14px; border-radius:10px; margin: 12px 0 18px; font-weight:600; }
           .grid { display:grid; grid-template-columns: 1fr 1fr; gap:14px; }
-          .card { border:1px solid #e6e9f2; border-radius:12px; padding:14px; }
+          .card { border:1px solid #c2c3c7ff; border-radius:12px; padding:14px; background:transparent; }
           .card h2 { margin:0 0 8px; font-size:18px; }
           .row { display:flex; justify-content:space-between; margin:6px 0; }
           .muted { color:#666; }
@@ -1454,7 +1454,10 @@ document.addEventListener('DOMContentLoaded', updateCycleRange); // <-- run on l
       return `
         ${css}
         <div class="report">
-          <h1>Koinfo Insights Report</h1>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <h1>Koinfo Insights Report</h1>
+            <img src="static/icon.png" alt="Logo" style="height:50px;">
+          </div>
           <div class="period">${rangeLabel}</div>
           <div class="summary-chip">${summaryLine}</div>
           <div class="grid">
@@ -1463,12 +1466,12 @@ document.addEventListener('DOMContentLoaded', updateCycleRange); // <-- run on l
               <div class="row"><span class="k">Income</span><span class="v">${totals.incFmt}</span></div>
               <div class="row"><span class="k">Expenses</span><span class="v">${totals.expFmt} <span class="muted small">(${totals.expPctInc}% of income)</span></span></div>
               <div class="row"><span class="k">Savings</span><span class="v">${totals.savFmt} <span class="muted small">(${totals.savPctInc}% of income)</span></span></div>
-              <div class="row"><span class="k">Net Position</span><span class="${totals.net >= 0 ? 'good' : 'bad'}">${totals.netFmt} ${totals.net >= 0 ? '(Surplus)' : '(Deficit)'}</span></div>
+              <div class="row"><span class="v">Net Position</span><span class="${totals.net >= 0 ? 'good' : 'bad'}">${totals.netFmt} ${totals.net >= 0 ? '(Surplus)' : '(Deficit)'}</span></div>
             </div>
             <div class="card">
               <h2>Highlights</h2>
-              <div class="row"><span class="k">Top Expense</span><span class="v"><span class="pill exp">${topExpCat || '—'}</span> <span class="muted small">${topExpValPctIncome ? topExpValPctIncome+'% of income' : ''}</span></span></div>
-              <div class="row"><span class="k">Top Saving</span><span class="v"><span class="pill sav">${topSavCat || '—'}</span> <span class="muted small">${topSavValPctIncome ? topSavValPctIncome+'% of income' : ''}</span></span></div>
+              <div class="row"><span class="k">Top Expense</span><span class="v"><span class="pill exp">${topExpCat || '—'}</span> <span class="muted small">${topExpValPctIncome ? topExpValPctIncome + '% of income' : ''}</span></span></div>
+              <div class="row"><span class="k">Top Saving</span><span class="v"><span class="pill sav">${topSavCat || '—'}</span> <span class="muted small">${topSavValPctIncome ? topSavValPctIncome + '% of income' : ''}</span></span></div>
               <div class="row"><span class="k">Debt Position</span><span class="v">${netDebtLabel}</span></div>
             </div>
           </div>
@@ -1487,16 +1490,17 @@ document.addEventListener('DOMContentLoaded', updateCycleRange); // <-- run on l
             <div class="card">
               <h2>Top Transactions</h2>
               <ul class="list">
-                <li><span class="k">Highest expense:</span> ${topTxns.exp}</li>
+                <li><span class="k">Highest expense:</span>${topTxns.exp}</li>
                 <li><span class="k">Highest saving:</span> ${topTxns.sav}</li>
                 <li><span class="k">Highest income:</span> ${topTxns.inc}</li>
               </ul>
             </div>
             <div class="card">
               <h2>Debts</h2>
-              <div class="row"><span class="k">Total Dues</span><span class="v">${debtsInfo.duesFmt}</span></div>
-              <div class="row"><span class="k">Total Claims</span><span class="v">${debtsInfo.claimsFmt}</span></div>
-              <div class="small muted">${debtsInfo.lines.join('<br>')}</div>
+              <div class="row"><span>Total Dues</span><span class="v">${debtsInfo.duesFmt}</span></div>
+              <div class="small muted">${debtsInfo.dueline.join('<br>')}</div>
+              <div class="row"><span>Total Claims</span><span class="v">${debtsInfo.claimsFmt}</span></div>
+              <div class="small muted">${debtsInfo.claim.join('<br>')}</div>
             </div>
           </div>
           <div class="section card">
@@ -1505,8 +1509,9 @@ document.addEventListener('DOMContentLoaded', updateCycleRange); // <-- run on l
               <div class="row">
                 <span class="k">${g.name}</span>
                 <span class="v">${g.currFmt} / ${g.tgtFmt} (${g.pct}%)
-                  <span class="muted small">• ${g.status}</span>
-                  ${g.alerts?.length ? ` <span class="bad small">• ${g.alerts.join(', ')}</span>` : ''}
+                  ${g.alerts && g.alerts.length 
+                    ? `<span class="good small">• ${g.alerts.join(', ')}</span>`
+                    : `<span class="muted small">• ${g.status ?? ''}</span>`}
                 </span>
               </div>
             `).join('') : '<div class="muted small">None</div>'}
@@ -1620,9 +1625,9 @@ document.addEventListener('DOMContentLoaded', updateCycleRange); // <-- run on l
         }
       });
       const fmtDate = d => new Date(d).toISOString().split('T')[0];
-      if(topRaw.expense){ topTxns.exp = `${(catsById[topRaw.expense.category_id]?.name || 'Unknown')} on ${fmtDate(topRaw.expense.date)} — ${fmtINR(Math.abs(+topRaw.expense.amount || 0))}`; }
-      if(topRaw.saving){ topTxns.sav = `${(catsById[topRaw.saving.category_id]?.name || 'Unknown')} on ${fmtDate(topRaw.saving.date)} — ${fmtINR(Math.abs(+topRaw.saving.amount || 0))}`; }
-      if(topRaw.income){ topTxns.inc = `${(catsById[topRaw.income.category_id]?.name || 'Unknown')} on ${fmtDate(topRaw.income.date)} — ${fmtINR(Math.abs(+topRaw.income.amount || 0))}`; }
+      if(topRaw.expense){ topTxns.exp = `${(catsById[topRaw.expense.category_id]?.name || 'Unknown')} on ${fmtDate(topRaw.expense.date)} — <span style="color:#b11226;">${fmtINR(Math.abs(+topRaw.expense.amount || 0))}</span>`; }
+      if(topRaw.saving){ topTxns.sav = `${(catsById[topRaw.saving.category_id]?.name || 'Unknown')} on ${fmtDate(topRaw.saving.date)} — <span style="color:#0a5ab1;">${fmtINR(Math.abs(+topRaw.saving.amount || 0))}</span>`; }
+      if(topRaw.income){ topTxns.inc = `${(catsById[topRaw.income.category_id]?.name || 'Unknown')} on ${fmtDate(topRaw.income.date)} — <span style="color:#0a7a3b;">${fmtINR(Math.abs(+topRaw.income.amount || 0))}</span>`; }
       // Debts info
       let dues = 0, claims = 0;
       (data.debts || []).forEach(d => {
@@ -1630,11 +1635,21 @@ document.addEventListener('DOMContentLoaded', updateCycleRange); // <-- run on l
         if((d.kind || 'payable') === 'payable') dues += bal;
         else claims += bal;
       });
-      const debtsInfo = {
-        duesFmt: fmtINR(dues),
-        claimsFmt: fmtINR(claims),
-        lines: (data.debts || []).map(d => `• ${d.name}: ${fmtINR(+d.balance || 0)} (${(d.kind || 'payable') === 'payable' ? 'Due' : 'Claim'})`)
-      };
+      const debtsInfo = (() => {
+        const dueline = [];
+        const claim = [];
+        (data.debts || []).forEach(d => {
+          const isDue = (d.kind || 'payable') === 'payable';
+          const line = `• ${d.name}: ${fmtINR(+d.balance || 0)} (${isDue ? 'Due' : 'Claim'})`;
+          (isDue ? dueline : claim).push(line);
+        });
+        return {
+          duesFmt: fmtINR(dues),
+          claimsFmt: fmtINR(claims),
+          dueline,  
+          claim      
+        };
+      })();
       const netDebt = dues - claims;
       const netDebtLabel = netDebt >= 0 ? `<span class="bad">Net Debt: ${fmtINR(netDebt)}</span>` : `<span class="good">Net Lender: ${fmtINR(Math.abs(netDebt))}</span>`;
       // Goals info with status and alerts
@@ -1646,14 +1661,13 @@ document.addEventListener('DOMContentLoaded', updateCycleRange); // <-- run on l
         dl.setHours(0,0,0,0);
         const daysLeft = Math.floor((dl - nowDate) / (24*3600*1000));
         const alerts = [];
-        if(daysLeft <= 10 && daysLeft >= 0) alerts.push('Approaching');
         if(cur >= tgt) alerts.push(cur > tgt ? 'Target Exceeded' : 'Reached');
         return {
           name: g.name,
           currFmt: fmtINR(cur),
           tgtFmt: fmtINR(tgt),
           pct: pctVal,
-          status: daysLeft < 0 ? 'Past Due' : (daysLeft === 0 ? 'Due Today' : `${daysLeft} day(s) left`),
+          status: daysLeft < 0 ? 'OverDue' : (daysLeft === 0 ? 'Due Today' : `${daysLeft} day(s) left`),
           alerts
         };
       });
@@ -1668,7 +1682,7 @@ document.addEventListener('DOMContentLoaded', updateCycleRange); // <-- run on l
         savPctInc: pct(totalSav, totalInc, 1)
       };
       // Summary line
-      const summaryLine = `You saved ${totalsBlock.savPctInc}% of income. Top outflow was ${topExpCat || '—'} (${topExpValPctIncome ? topExpValPctIncome+'%' : '—'}). Net position: ${net >= 0 ? 'Surplus' : 'Deficit'} ${fmtINR(Math.abs(net))}.`;
+      const summaryLine = `You saved ${totalsBlock.savPctInc}% of Income. Top outflow was ${topExpCat || '—'} (${topExpValPctIncome ? topExpValPctIncome + '%' : '—'}). Net position: ${net >= 0 ? 'Surplus' : 'Deficit'} (${fmtINR(Math.abs(net))}).`;
       const rangeLabel = `Period: ${fmtDate(cycleStart)} to ${fmtDate(nowDate)}`;
       // Chart generation has been removed in favour of a simpler report layout.
       const totalsChartImg = '';
@@ -1691,14 +1705,25 @@ document.addEventListener('DOMContentLoaded', updateCycleRange); // <-- run on l
       // Generate PDF
       try {
         await ensureHtml2Pdf();
-        const opt = {
-          margin: [10,10,10,10],
+        // Configure html2pdf without specifying an explicit image type.
+        // Specifying an image type of 'jpeg' can cause "Unsupported image format"
+        // errors when the HTML contains PNG or SVG images.  Leaving the
+        // `image` property undefined allows html2canvas/html2pdf to
+        // automatically choose the correct image format.  The PDF will be
+        // downloaded immediately with the given filename and will not
+        // trigger the browser’s print dialog unless the library fails to
+        // load.
+        const pdfOpts = {
+          margin: [10, 10, 10, 10],
           filename: `koinfo_insights_cycle_${Date.now()}.pdf`,
-          image: { type:'jpeg', quality:0.98 },
-          html2canvas: { scale:2, useCORS:true },
-          jsPDF: { unit:'mm', format:'a3', orientation:'portrait' }
+          // Enable CORS and allow canvas tainting.  Fonts hosted on
+          // external domains (e.g. Google Fonts) or other resources can
+          // otherwise trigger "Unsupported image type" errors when
+          // html2canvas serialises the document.
+          html2canvas: { scale: 2, useCORS: true, allowTaint: true },
+          jsPDF: { unit: 'mm', format: 'a3', orientation: 'portrait' }
         };
-        await window.html2pdf().set(opt).from(html).save();
+        await window.html2pdf().set(pdfOpts).from(html).save();
       } catch(e){
         // Fallback to print dialog
         const w = window.open('', '_blank');
