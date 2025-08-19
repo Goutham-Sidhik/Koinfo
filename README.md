@@ -10,7 +10,7 @@ With a clean UI and dynamic charts, the app makes it easy to stay on top of your
 
 - 📊 **Dashboard overview**: Quickly see total income, expenses, savings, net position, and debt balances.  
 - 🔄 **Flexible timelines**: Switch between your current budget cycle or the last 3, 6, or 12 months, and view breakdowns of spending by category with interactive charts.  
-- 📝 **Manage data**: Add, update, and delete categories (income, expense, saving), debts (with automatic category linking), savings targets, and transactions. Transactions automatically update linked debt balances and goal progress.  
+- 📝 **Manage data**: Add/update/delete categories (income, expense, saving), debts (with automatic category linking), savings targets, and transactions. Transactions automatically update linked debt balances and goal progress.  
 - ⚙️ **Customization**: Choose the day your budget cycle starts and set an opening balance. All data is stored locally in `finance_data.json`.  
 - 📸 **Insights & reset**: Export a PDF of the quick insights from the Actions menu and restore the application to its default state at any time.  
 - 📱 **Responsive design**: Built with HTML/CSS/JS and Chart.js, the dashboard works smoothly on modern desktop and mobile browsers.  
@@ -21,7 +21,7 @@ With a clean UI and dynamic charts, the app makes it easy to stay on top of your
 
 Don’t want to install Python or dependencies? Grab the **standalone `.exe`** and run it directly on your system:
 
-👉 [**Download Latest Release**](https://github.com/yourusername/your-repo/releases/latest)
+👉 [**Download Latest Release**](https://github.com/Goutham-Sidhik/Koinfo/releases/latest)
 
 > The app starts automatically when you run the `.exe`.
 
@@ -32,8 +32,8 @@ Don’t want to install Python or dependencies? Grab the **standalone `.exe`** a
 1. Ensure you have **Python 3.10+** and **pip** installed.  
 2. Clone this repository:
    ```bash
-   git clone https://github.com/yourusername/your-repo.git
-   cd your-repo
+   git clone https://github.com/Goutham-Sidhik/Koinfo.git
+   cd Koinfo
    ```
 3. (Optional) Create and activate a virtual environment:
    ```bash
