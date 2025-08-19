@@ -99,7 +99,7 @@ Adjust the fmtINR / formatINR functions in static/js/manage.js and static/js/das
 
 ### Insights Report  
 - Sample Report Output  
-![Insights Report](preview/insights-report-sample.pdf) 
+![Insights Report](preview/insights-report-sample.png) 
 
 ---
 
