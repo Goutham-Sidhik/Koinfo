@@ -605,6 +605,14 @@ def api_reset_data():
     _save_data(fresh)
     return jsonify(fresh)
 
+import webbrowser
+from threading import Timer
+
+def open_browser():
+    webbrowser.open("http://127.0.0.1:2901")
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    # open the browser 1 second after the server starts
+    Timer(1, open_browser).start()
+    app.run(host="127.0.0.1", port=2901, debug=False)
+
