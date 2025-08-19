@@ -196,6 +196,24 @@
         savData.push(savSum);
         // Next day
         if (diffDays > 10) {
+          const nextDay = cloneDate(d);
+          nextDay.setDate(nextDay.getDate() + 1);
+          if (nextDay <= endDate) {
+            const segTxns2 = filterTxnsByDate(allTxns, nextDay, nextDay);
+            let inc2 = 0, exp2 = 0, sav2 = 0;
+            segTxns2.forEach(t => {
+              const type = classifyTransaction(t, catsById);
+              const amt = Math.abs(+t.amount || 0);
+              if (type === 'income') inc2 += amt;
+              else if (type === 'expense') exp2 += amt;
+              else if (type === 'saving') sav2 += amt;
+            });
+            // labels.push(nextDay.toLocaleDateString('en-GB', { day: '2-digit' }));
+            labels.push(''); // Empty label for next day
+            incData.push(inc2);
+            expData.push(exp2);
+            savData.push(sav2);
+          }
           d.setDate(d.getDate() + 2); // Skip 2 days for larger ranges
         } else {
           d.setDate(d.getDate() + 1);
@@ -803,25 +821,6 @@
         renderDashboard();
       });
     }
-    // Download button
-    const downloadBtn = document.getElementById('downloadBtn');
-    if(downloadBtn){
-      downloadBtn.addEventListener('click', async () => {
-        // Capture the entire document body instead of just the main container.  This
-        // ensures the downloaded image reflects everything visible on screen.
-        const target = document.documentElement;
-        try {
-          const canvas = await html2canvas(target, { scrollX: 0, scrollY: 0, windowWidth: document.documentElement.scrollWidth, windowHeight: document.documentElement.scrollHeight });
-          const link = document.createElement('a');
-          link.href = canvas.toDataURL('image/png');
-          link.download = `dashboard_${Date.now()}.png`;
-          link.click();
-        } catch(err){
-          console.error(err);
-          window.showAlert?.('Error downloading image','error');
-        }
-      });
-    }
     // Set up overlay close and background click events
     setupOverlayEvents();
     // Initial render
@@ -895,7 +894,7 @@
       const css = `
         <style>
           * { box-sizing: border-box; }
-          body { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; color:#222; margin:0; }
+          body { font-family: "Comic Sans MS", monospace; color:#222; margin:0; }
           .report { padding: 24px; max-width: 1100px; }
           h1 { margin: 0 0 6px; font-size: 26px; }
           .period { color:#666; margin-bottom: 12px; }
@@ -909,8 +908,8 @@
           .bad { color:#b11226; font-weight:600; }
           .pill { display:inline-block; padding:2px 8px; border-radius:999px; font-weight:600; border:1px solid #e6e9f2; background:#fafbff; }
           .pill.exp { color:#b11226; background: #fff5f6; border-color:#ffd9de; }
-          .pill.sav { color:#0a7a3b; background: #f2fbf5; border-color:#cdeed7; }
-          .pill.inc { color:#0a5ab1; background: #f1f7ff; border-color:#d6e8ff; }
+          .pill.inc { color:#0a7a3b; background: #f2fbf5; border-color:#cdeed7; }
+          .pill.sav { color:#0a5ab1; background: #f1f7ff; border-color:#d6e8ff; }
           .list { margin: 6px 0 0 0; padding-left: 16px; }
           .list li { margin: 4px 0; }
           .section { margin-top: 16px; }
@@ -937,7 +936,7 @@
               <div class="row"><span class="k">Income</span><span class="v">${totals.incFmt}</span></div>
               <div class="row"><span class="k">Expenses</span><span class="v">${totals.expFmt} <span class="muted small">(${totals.expPctInc}% of income)</span></span></div>
               <div class="row"><span class="k">Savings</span><span class="v">${totals.savFmt} <span class="muted small">(${totals.savPctInc}% of income)</span></span></div>
-              <div class="row"><span class="k">Net Position</span><span class="${totals.net >= 0 ? 'good' : 'bad'}">${totals.netFmt} ${totals.net >= 0 ? '(Surplus)' : '(Deficit)'}</span></div>
+              <div class="row"><span class="v">Net Position</span><span class="${totals.net >= 0 ? 'good' : 'bad'}">${totals.netFmt} ${totals.net >= 0 ? '(Surplus)' : '(Deficit)'}</span></div>
             </div>
             <div class="card">
               <h2>Highlights</h2>
@@ -961,16 +960,17 @@
             <div class="card">
               <h2>Top Transactions</h2>
               <ul class="list">
-                <li><span class="k">Highest expense:</span> ${topTxns.exp}</li>
+                <li><span class="k">Highest expense:</span>${topTxns.exp}</li>
                 <li><span class="k">Highest saving:</span> ${topTxns.sav}</li>
                 <li><span class="k">Highest income:</span> ${topTxns.inc}</li>
               </ul>
             </div>
             <div class="card">
               <h2>Debts</h2>
-              <div class="row"><span class="k">Total Dues</span><span class="v">${debtsInfo.duesFmt}</span></div>
-              <div class="row"><span class="k">Total Claims</span><span class="v">${debtsInfo.claimsFmt}</span></div>
-              <div class="small muted">${debtsInfo.lines.join('<br>')}</div>
+              <div class="row"><span>Total Dues</span><span class="v">${debtsInfo.duesFmt}</span></div>
+              <div class="small muted">${debtsInfo.dueline.join('<br>')}</div>
+              <div class="row"><span>Total Claims</span><span class="v">${debtsInfo.claimsFmt}</span></div>
+              <div class="small muted">${debtsInfo.claim.join('<br>')}</div>
             </div>
           </div>
           <div class="section card">
@@ -979,8 +979,9 @@
               <div class="row">
                 <span class="k">${g.name}</span>
                 <span class="v">${g.currFmt} / ${g.tgtFmt} (${g.pct}%)
-                  <span class="muted small">• ${g.status}</span>
-                  ${g.alerts && g.alerts.length ? ` <span class="bad small">• ${g.alerts.join(', ')}</span>` : ''}
+                  ${g.alerts && g.alerts.length 
+                    ? `<span class="good small">• ${g.alerts.join(', ')}</span>`
+                    : `<span class="muted small">• ${g.status ?? ''}</span>`}
                 </span>
               </div>
             `).join('') : '<div class="muted small">None</div>'}
@@ -1046,17 +1047,27 @@
       const topTxnsRaw = computeTopTxns(periodTxns, catsById);
       const fmtDate = d => new Date(d).toISOString().split('T')[0];
       const topTxns = {
-        exp: topTxnsRaw.expense ? `${(catsById[topTxnsRaw.expense.category_id]?.name || 'Unknown')} on ${fmtDate(topTxnsRaw.expense.date)} — ${fmtINR(Math.abs(+topTxnsRaw.expense.amount || 0))}` : 'None',
-        sav: topTxnsRaw.saving ? `${(catsById[topTxnsRaw.saving.category_id]?.name || 'Unknown')} on ${fmtDate(topTxnsRaw.saving.date)} — ${fmtINR(Math.abs(+topTxnsRaw.saving.amount || 0))}` : 'None',
-        inc: topTxnsRaw.income ? `${(catsById[topTxnsRaw.income.category_id]?.name || 'Unknown')} on ${fmtDate(topTxnsRaw.income.date)} — ${fmtINR(Math.abs(+topTxnsRaw.income.amount || 0))}` : 'None'
+        exp: topTxnsRaw.expense ? `${(catsById[topTxnsRaw.expense.category_id]?.name || 'Unknown')} on ${fmtDate(topTxnsRaw.expense.date)} — <span style="color:#b11226;">${fmtINR(Math.abs(+topTxnsRaw.expense.amount || 0))}</span>` : 'None',
+        sav: topTxnsRaw.saving ? `${(catsById[topTxnsRaw.saving.category_id]?.name || 'Unknown')} on ${fmtDate(topTxnsRaw.saving.date)} — <span style="color:#0a5ab1;">${fmtINR(Math.abs(+topTxnsRaw.saving.amount || 0))}</span>` : 'None', 
+        inc: topTxnsRaw.income ? `${(catsById[topTxnsRaw.income.category_id]?.name || 'Unknown')} on ${fmtDate(topTxnsRaw.income.date)} — <span style="color:#0a7a3b;">${fmtINR(Math.abs(+topTxnsRaw.income.amount || 0))}</span>` : 'None' 
       };
       // Debts info
       const debtsInfoRaw = computeDebtsInfo(data.debts || []);
-      const debtsInfo = {
+      const debtsInfo = (() => {
+      const dueline = [];
+      const claim = [];
+      (data.debts || []).forEach(d => {
+        const isDue = (d.kind || 'payable') === 'payable';
+        const line = `• ${d.name}: ${fmtINR(+d.balance || 0)} (${isDue ? 'Due' : 'Claim'})`;
+        (isDue ? dueline : claim).push(line);
+      });
+      return {
         duesFmt: fmtINR(debtsInfoRaw.dues),
         claimsFmt: fmtINR(debtsInfoRaw.claims),
-        lines: (data.debts || []).map(d => `• ${d.name}: ${fmtINR(+d.balance || 0)} (${(d.kind || 'payable') === 'payable' ? 'Due' : 'Claim'})`)
+        dueline,  
+        claim      
       };
+      })();
       const netDebt = (debtsInfoRaw.dues || 0) - (debtsInfoRaw.claims || 0);
       const netDebtLabel = netDebt >= 0 ? `<span class="bad">Net Debt: ${fmtINR(netDebt)}</span>` : `<span class="good">Net Lender: ${fmtINR(Math.abs(netDebt))}</span>`;
       // Goals info using computeGoals
@@ -1066,7 +1077,7 @@
         currFmt: fmtINR(g.current),
         tgtFmt: fmtINR(g.target),
         pct: g.pct,
-        status: g.daysLeft < 0 ? 'Past Due' : (g.daysLeft === 0 ? 'Due Today' : `${g.daysLeft} day(s) left`),
+        status: g.daysLeft < 0 ? 'OverDue' : (g.daysLeft === 0 ? 'Due Today' : `${g.daysLeft} day(s) left`),
         alerts: g.alerts || []
       }));
       // Totals formatting block
@@ -1080,7 +1091,7 @@
         savPctInc: pct(totalSav, totalInc, 1)
       };
       // Summary line
-      const summaryLine = `You saved ${totalsBlock.savPctInc}% of income. Top outflow was ${topExpCat || '—'} (${topExpValPctIncome ? topExpValPctIncome + '%' : '—'}). Net position: ${net >= 0 ? 'Surplus' : 'Deficit'} ${fmtINR(Math.abs(net))}.`;
+      const summaryLine = `You saved ${totalsBlock.savPctInc}% of Income. Top outflow was ${topExpCat || '—'} (${topExpValPctIncome ? topExpValPctIncome + '%' : '—'}). Net position: ${net >= 0 ? 'Surplus' : 'Deficit'} (${fmtINR(Math.abs(net))}).`;
       const rangeLabel = `Period: ${fmtDate(trends.rangeStart)} to ${fmtDate(trends.rangeEnd)}`;
       // Chart generation has been removed in favour of a simpler report layout.
       const totalsChartImg = '';
@@ -1101,19 +1112,20 @@
         netDebtLabel
       });
       // Generate PDF
+      timeStamp = Date.now()
       try {
         await ensureHtml2Pdf();
         const opt = {
           margin: [10,10,10,10],
-          filename: `koinfo_insights_${range}_${Date.now()}.pdf`,
-          image: { type:'jpeg', quality:0.98 },
+          filename: `koinfo_insights_${range}_${timeStamp}.pdf`,
           html2canvas: { scale: 2, useCORS: true },
-          jsPDF: { unit:'mm', format:'a3', orientation:'portrait' }
+          jsPDF: { unit:'mm', format:'a3', orientation:'portrait'}
         };
         await window.html2pdf().set(opt).from(html).save();
       } catch(e){
+        console.error('html2pdf failed:', e);
         // Fallback: open print dialog; user can save as PDF
-        const w = window.open('', '_blank');
+        const w = window.open(`koinfo_insights_${range}_${timeStamp}.html`);
         w.document.write(html);
         w.document.close();
         w.focus();

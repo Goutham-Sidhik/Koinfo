@@ -1421,7 +1421,7 @@ document.addEventListener('DOMContentLoaded', updateCycleRange); // <-- run on l
       const css = `
         <style>
           * { box-sizing: border-box; }
-          body { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; color:#222; margin:0; }
+          body { font-family: "Comic Sans MS", monospace; color:#222; margin:0; }
           .report { padding: 24px; max-width: 1100px; }
           h1 { margin: 0 0 6px; font-size: 26px; }
           .period { color:#666; margin-bottom: 12px; }

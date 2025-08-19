@@ -204,7 +204,8 @@
 
 * {
     box-sizing: border-box;
-    font-family: 'Brush Script MT', cursive;
+    /* font-family: 'Brush Script MT', cursive; */
+    font-family: "Comic Sans MS", monospace;
 }
 
 html,
@@ -214,7 +215,8 @@ body {
 
 body {
     margin: 0;
-    font-family: 'Brush Script MT', cursive;
+    /* font-family: 'Brush Script MT', cursive; */
+    /* font-family: 'Bradley hand', cursive; */
     background: linear-gradient(120deg, #121a3a 0%, #090f1f 100%);
     color: var(--fg)
 }

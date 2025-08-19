@@ -119,6 +119,18 @@
       "name": "qweras - Debt",
       "type": "income",
       "deleted": true
+    },
+    {
+      "id": "daec5932-0532-46e3-8e9a-ad0b1863d77d",
+      "name": "yui - Goal",
+      "type": "saving",
+      "deleted": false
+    },
+    {
+      "id": "05b81906-a23f-4a34-b7ab-b19a6940569f",
+      "name": "qweras - Goal",
+      "type": "saving",
+      "deleted": false
     }
   ],
   "transactions": [
@@ -534,6 +546,28 @@
       "debt_claim": false,
       "goal_withdrawal": false,
       "type": "saving"
+    },
+    {
+      "id": "1c624fb5-c5f1-40e3-be05-9c46beb8d913",
+      "date": "2025-08-19",
+      "category_id": "daec5932-0532-46e3-8e9a-ad0b1863d77d",
+      "amount": 3000.0,
+      "note": "",
+      "use_open_balance": false,
+      "debt_claim": false,
+      "goal_withdrawal": false,
+      "type": "saving"
+    },
+    {
+      "id": "0750f109-5b03-4633-9038-b1812fe220ae",
+      "date": "2025-08-12",
+      "category_id": "399f8cfd-1240-4002-9b8a-c6ea73203645",
+      "amount": 8000.0,
+      "note": "",
+      "use_open_balance": false,
+      "debt_claim": false,
+      "goal_withdrawal": false,
+      "type": "expense"
     }
   ],
   "debts": [
@@ -577,6 +611,24 @@
       "deadline": "2025-08-19",
       "created": "2025-08-18",
       "linked_category_id": "d16fea59-a531-4b3f-9dc1-d7526e788632"
+    },
+    {
+      "id": "8a8a3130-19fb-4e88-aebb-bf69747998c6",
+      "name": "yui",
+      "target": 25000.0,
+      "current": 3000.0,
+      "deadline": "2025-08-28",
+      "created": "2025-08-19",
+      "linked_category_id": "daec5932-0532-46e3-8e9a-ad0b1863d77d"
+    },
+    {
+      "id": "6060d268-375d-4bb7-aec6-ea6bf65b913e",
+      "name": "qweras",
+      "target": 100000.0,
+      "current": 0.0,
+      "deadline": "2025-09-17",
+      "created": "2025-08-19",
+      "linked_category_id": "05b81906-a23f-4a34-b7ab-b19a6940569f"
     }
   ],
   "open_balance": 15000.0
