@@ -1,19 +1,19 @@
 {
   "categories": [
     {
-      "id": "8be5410a-3c5d-4a2b-9e77-a15f3c06b2aa",
+      "id": "48c97de7-39ab-4569-ba8f-0b9cd69df908",
       "name": "Salary",
       "type": "income",
       "deleted": false
     },
     {
-      "id": "7caf7fe0-63ed-471f-b308-92cccaa95cd8",
+      "id": "bd061ace-fd1c-4f17-afbe-ba5b3e85b21f",
       "name": "Groceries",
       "type": "expense",
       "deleted": false
     },
     {
-      "id": "f31c7e98-6fd0-4a0e-9bc7-725a66e31735",
+      "id": "eb301d68-0a99-4d5f-9b1a-41b8afd529cd",
       "name": "Investments",
       "type": "saving",
       "deleted": false
