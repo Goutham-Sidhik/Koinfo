@@ -102,7 +102,6 @@
       totalInc += amt;
       } else if (type === 'expense') {
         totalExp += amt;
-
         // Resolve category name (fallbacks included)
         let catName = 'Uncategorized';
         if (t.category_id && catsById && catsById[t.category_id]) {
@@ -110,7 +109,6 @@
         } else if (t.category_name) {
           catName = t.category_name;
         }
-
         expenseByCat.set(catName, (expenseByCat.get(catName) || 0) + amt);
       } else if (type === 'saving') {
         totalSav += amt;
@@ -648,7 +646,6 @@
           }
         }
       },
-      // plugins:[debtLabelPlugin]
     });
   }
 
