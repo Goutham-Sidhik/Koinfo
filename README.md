@@ -8,12 +8,13 @@ With a clean UI and dynamic charts, the app makes it easy to stay on top of your
 
 ## ✨ Features
 
-- 📊 **Dashboard overview**: Quickly see total income, expenses, savings, net position, and debt balances.  
-- 🔄 **Flexible timelines**: Switch between your current budget cycle or the last 3, 6, or 12 months, and view breakdowns of spending by category with interactive charts.  
-- 📝 **Manage data**: Add/update/delete categories (income, expense, saving), debts (with automatic category linking), savings targets, and transactions. Transactions automatically update linked debt balances and goal progress.  
-- ⚙️ **Customization**: Choose the day your budget cycle starts and set an opening balance. All data is stored locally in `finance_data.json`.  
-- 📸 **Insights & reset**: Export a PDF of the quick insights from the Actions menu and restore the application to its default state at any time.  
-- 📱 **Responsive design**: Built with HTML/CSS/JS and Chart.js, the dashboard works smoothly on modern desktop and mobile browsers.  
+- 📊 **Dashboard overview** – Track income, expenses, savings, debts, and net position instantly.  
+- 🔄 **Flexible timelines** – View spending by category across the current cycle or last 3, 6, or 12 months.  
+- 📝 **Manage Data** – Add, edit, or delete categories, transactions, debts, and savings goals.  
+- ⚙️ **Customization** – Set your budget reset day and opening balance; data stored locally in `data/finance_data.json`.  
+- 📑 **Insights & reset** – Download a **PDF summary** or reset the app to defaults anytime.  
+- 📱 **Responsive design** – Clean, mobile-friendly UI powered by HTML/CSS/JS.  
+
 
 ---
 
@@ -61,7 +62,7 @@ By default, the app runs on http://127.0.0.1:2901 and automatically opens a brow
 
 ## ⚙️ Configuration
 
-🔌 Port: Set a different port by defining a PORT environment variable or editing the call to app.run in app.py.
+🔌 Port: Set a different port in needed at app.run() in app.py.
 
 📂 Data file: Your data is stored in data/finance_data.json. Delete this file or use the Reset data action to start fresh.
 
@@ -86,10 +87,14 @@ Adjust the fmtINR / formatINR functions in static/js/manage.js and static/js/das
 
 ---
 
-## 💡 Future Improvements
+## 📌 Planned Features
 
-- User authentication.
-- Multi User Usage
+- 🔐 **User authentication** – Secure logins to protect personal finance data.  
+- 👥 **Multi-user support** – Separate dashboards so multiple people can use the same app independently.  
+- 💱 **Currency selection** – Choose your preferred currency beyond the default locale/INR.  
+- 📱 **Mobile version** – Optimized standalone app experience for Android/iOS.  
+- ☁️ **Cloud sync** – Seamlessly access your data across devices.  
+- 📊 **Advanced analytics** – AI-driven insights, expense forecasting, and personalized recommendations.  
 
 ---
 
