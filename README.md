@@ -19,16 +19,6 @@ With a clean UI and dynamic charts, the app makes it easy to stay on top of your
 
 ---
 
-## 📦 Direct Download (Standalone)
-
-Want to try it out immediately? Just grab the **latest release** and run the `.exe` file — no setup needed.
-
-👉 [**Download Latest Release**](https://github.com/Goutham-Sidhik/Koinfo/releases/latest)
-
-> The app starts automatically when you run the `.exe`.
-
----
-
 ## 🛠️ Installation (From Source Code)
 
 1. Ensure you have **Python 3.10+** and **pip** installed.  
