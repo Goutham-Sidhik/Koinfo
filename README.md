@@ -120,10 +120,9 @@ This project is released under the MIT License. See the LICENSE file for details
 
 ---
 
-## 🤝 Contributing
-
-Contributions are welcome! Fork the repository, create a branch for your feature or bug fix, and open a pull request.
-Please open an issue first to discuss major changes.
+### 🗣️ Feedback  
+ 
+💡 Have ideas, found a bug, or want to suggest a feature? 👉 [Submit here](https://forms.gle/BuNuWwk2CH3NVPou8)
 
 ---
 

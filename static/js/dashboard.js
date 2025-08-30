@@ -102,6 +102,9 @@
       totalInc += amt;
       } else if (type === 'expense') {
         totalExp += amt;
+        if (t.use_open_balance === true) {
+          totalInc += amt; // Add to income as this txn is funded by opening balance
+        }
         // Resolve category name (fallbacks included)
         let catName = 'Uncategorized';
         if (t.category_id && catsById && catsById[t.category_id]) {
@@ -112,6 +115,9 @@
         expenseByCat.set(catName, (expenseByCat.get(catName) || 0) + amt);
       } else if (type === 'saving') {
         totalSav += amt;
+        if (t.use_open_balance === true) {
+          totalInc += amt; // Add to income as this txn is funded by opening balance
+        }
       }
     });
     // Debts: accumulate dues and claims separately
@@ -410,7 +416,7 @@
     if(!container) return;
     const { totalInc, totalExp, totalSav, net, dues, claims, topExpCat, topExpPctOfIncome } = summary;
     const debtText = `<span>Dues: </span><span class="text-dues">${fmtINR(dues)}</span> • <span>Claims: </span><span class="text-claims">${fmtINR(claims)}</span>`;
-    const expPct = totalInc ? ((totalExp / totalInc) * 100).toFixed(2) : 0;
+    // const expPct = totalInc ? ((totalExp / totalInc) * 100).toFixed(2) : 0;
     const savPct = totalInc ? ((totalSav / totalInc) * 100).toFixed(2) : 0;
     const expLabel = topExpCat && topExpCat.trim() ? topExpCat : "Spent";
     container.innerHTML = [
