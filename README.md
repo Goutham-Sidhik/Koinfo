@@ -1,4 +1,5 @@
 # 🪙 Koinfo ℹ️
+[![Feedback](https://img.shields.io/badge/Feedback-Submit%20Here-blue)](https://forms.gle/BuNuWwk2CH3NVPou8)
 
 **Koinfo** is an interactive personal finance dashboard built with Python and Flask.  
 It helps you track incomes, expenses, savings, debts, and goals, manage budgets, and visualize spending patterns over time.  
@@ -122,7 +123,7 @@ This project is released under the MIT License. See the LICENSE file for details
 
 ### 🗣️ Feedback  
  
-💡 Have ideas, found a bug, or want to suggest a feature? 👉 [Submit here](https://forms.gle/BuNuWwk2CH3NVPou8)
+Have ideas, found a bug, or want to suggest a feature? 👉 [Submit Here](https://forms.gle/BuNuWwk2CH3NVPou8)
 
 ---
 
